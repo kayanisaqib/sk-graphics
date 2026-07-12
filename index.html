@@ -3,37 +3,316 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>SK GRAPHICS — ARCHIVE</title>
-    <link rel="preconnect" href="https://fonts.googleapis.com">
-    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-    <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@300;400;500&family=Syne:wght@500;700&display=swap" rel="stylesheet">
+    <title>SK Graphics | Archive</title>
     <style>
         :root {
-            --color-bg: #0a0a0a;
-            --color-text: #f5f5f5;
-            --color-dim: #707070;
-            --border-ui: rgba(255, 255, 255, 0.06);
-            --font-display: 'Syne', sans-serif;
-            --font-sans: 'Plus Jakarta Sans', sans-serif;
+            --bg-color: #050505;
+            --text-main: #f0f0f0;
+            --text-muted: #888888;
+            --accent: #ffffff;
         }
 
         * {
-            box-sizing: border-box;
-            user-select: none;
-            -webkit-user-select: none;
-        }
-
-        body, html {
             margin: 0;
             padding: 0;
+            box-sizing: border-box;
+            font-family: 'Helvetica Neue', Helvetica, Arial, sans-serif;
+        }
+
+        body {
+            background-color: var(--bg-color);
+            color: var(--text-main);
+            min-height: 100vh;
+            overflow-x: hidden;
+        }
+
+        /* Noise overlay */
+        body::before {
+            content: "";
+            position: fixed;
+            top: 0; left: 0; width: 100vw; height: 100vh;
+            background: url('https://grainy-gradients.vercel.app/noise.svg');
+            opacity: 0.05;
+            pointer-events: none;
+            z-index: 999;
+        }
+
+        header {
+            padding: 4rem 2rem;
+            text-align: center;
+        }
+
+        header h1 {
+            font-size: 2rem;
+            font-weight: 600;
+            letter-spacing: 2px;
+            text-transform: uppercase;
+        }
+
+        header p {
+            margin-top: 0.5rem;
+            color: var(--text-muted);
+            font-size: 0.9rem;
+            letter-spacing: 1px;
+        }
+
+        .grid-container {
+            display: grid;
+            grid-template-columns: repeat(auto-fill, minmax(300px, 1fr));
+            gap: 2rem;
+            padding: 0 2rem 4rem 2rem;
+            max-width: 1400px;
+            margin: 0 auto;
+        }
+
+        .card {
+            position: relative;
+            cursor: pointer;
+            border-radius: 4px;
+            overflow: hidden;
+            background: #111;
+            aspect-ratio: 3/4;
+            transition: transform 0.4s cubic-bezier(0.25, 1, 0.5, 1);
+        }
+
+        .card:hover {
+            transform: translateY(-10px);
+        }
+
+        .card img {
             width: 100%;
             height: 100%;
-            background-color: var(--color-bg);
-            color: var(--color-text);
-            font-family: var(--font-sans);
-            overflow-x: hidden;
-            -webkit-font-smoothing: antialiased;
+            object-fit: cover;
+            filter: grayscale(100%) contrast(1.2);
+            transition: filter 0.5s ease, transform 0.5s ease;
         }
+
+        .card:hover img {
+            filter: grayscale(0%) contrast(1);
+            transform: scale(1.05);
+        }
+
+        .card-info {
+            position: absolute;
+            bottom: 0;
+            left: 0;
+            width: 100%;
+            padding: 2rem 1.5rem 1.5rem 1.5rem;
+            background: linear-gradient(to top, rgba(0,0,0,0.9), transparent);
+            transform: translateY(20px);
+            opacity: 0;
+            transition: all 0.4s ease;
+            pointer-events: none;
+        }
+
+        .card:hover .card-info {
+            transform: translateY(0);
+            opacity: 1;
+        }
+
+        .card-info h3 {
+            font-size: 1.2rem;
+            margin-bottom: 0.3rem;
+        }
+
+        .card-info p {
+            font-size: 0.8rem;
+            color: var(--text-muted);
+            text-transform: uppercase;
+            letter-spacing: 1px;
+        }
+
+        /* --- IMMERSIVE LIGHTBOX ENGINE --- */
+        #lightbox {
+            position: fixed;
+            top: 0; left: 0; width: 100vw; height: 100vh;
+            background: rgba(0, 0, 0, 0.85);
+            backdrop-filter: blur(15px);
+            -webkit-backdrop-filter: blur(15px);
+            z-index: 10000;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            opacity: 0;
+            pointer-events: none;
+            transition: opacity 0.4s ease;
+        }
+
+        #lightbox.active {
+            opacity: 1;
+            pointer-events: auto;
+        }
+
+        #lightbox img {
+            max-width: 90%;
+            max-height: 70vh;
+            object-fit: contain;
+            border-radius: 4px;
+            box-shadow: 0 20px 50px rgba(0,0,0,0.8);
+            transform: scale(0.95);
+            transition: transform 0.4s cubic-bezier(0.25, 1, 0.5, 1);
+        }
+
+        #lightbox.active img {
+            transform: scale(1);
+        }
+
+        .lightbox-controls {
+            margin-top: 2rem;
+            text-align: center;
+            display: flex;
+            flex-direction: column;
+            gap: 1.5rem;
+            align-items: center;
+            padding: 0 1rem;
+        }
+
+        .lightbox-meta h2 {
+            font-size: 1.5rem;
+            font-weight: 500;
+            margin-bottom: 0.3rem;
+        }
+
+        .lightbox-meta p {
+            color: var(--text-muted);
+            font-size: 0.9rem;
+            letter-spacing: 1px;
+            text-transform: uppercase;
+        }
+
+        .btn {
+            background: transparent;
+            color: var(--text-main);
+            border: 1px solid rgba(255,255,255,0.3);
+            padding: 0.8rem 2rem;
+            font-size: 0.8rem;
+            text-transform: uppercase;
+            letter-spacing: 2px;
+            cursor: pointer;
+            border-radius: 30px;
+            text-decoration: none;
+            transition: all 0.3s ease;
+        }
+
+        .btn:hover {
+            background: var(--text-main);
+            color: var(--bg-color);
+        }
+
+        .close-btn {
+            position: absolute;
+            top: 2rem;
+            right: 2rem;
+            font-size: 2.5rem;
+            color: var(--text-muted);
+            cursor: pointer;
+            transition: color 0.3s;
+            background: none;
+            border: none;
+            padding: 10px;
+            line-height: 1;
+        }
+
+        .close-btn:hover {
+            color: var(--text-main);
+        }
+    </style>
+</head>
+<body>
+
+    <header>
+        <h1>SK Graphics</h1>
+        <p>Digital Architecture & Spatial Design</p>
+    </header>
+
+    <div class="grid-container" id="gallery-grid">
+        <!-- The Database Logic Injects Cards Here -->
+    </div>
+
+    <!-- THE FULLSCREEN LIGHTBOX -->
+    <div id="lightbox">
+        <button class="close-btn" id="lightbox-close">&times;</button>
+        <img id="lightbox-img" src="" alt="Full Screen Art">
+        <div class="lightbox-controls">
+            <div class="lightbox-meta">
+                <h2 id="lightbox-title">Loading Title...</h2>
+                <p id="lightbox-category">Loading Category...</p>
+            </div>
+            <a href="#" id="lightbox-download" download class="btn">Download Asset</a>
+        </div>
+    </div>
+
+    <script>
+        // 1. Fetch JSON Database
+        fetch('./gallery.json')
+            .then(response => {
+                if (!response.ok) throw new Error('Network response was not ok');
+                return response.json();
+            })
+            .then(data => {
+                const grid = document.getElementById('gallery-grid');
+                grid.innerHTML = ''; 
+
+                data.forEach(item => {
+                    const card = document.createElement('div');
+                    card.className = 'card';
+                    
+                    // Fire Lightbox on tap
+                    card.onclick = () => openLightbox(item.imageUrl, item.title, item.category, item.client);
+
+                    card.innerHTML = `
+                        <img src="${item.imageUrl}" alt="${item.title}" loading="lazy">
+                        <div class="card-info">
+                            <h3>${item.title}</h3>
+                            <p>${item.category} &bull; ${item.client}</p>
+                        </div>
+                    `;
+                    grid.appendChild(card);
+                });
+            })
+            .catch(error => {
+                console.error('Error loading gallery:', error);
+                document.getElementById('gallery-grid').innerHTML = '<p style="text-align:center; width:100%;">Loading Archive Data...</p>';
+            });
+
+        // 2. Lightbox Interaction Physics
+        const lightbox = document.getElementById('lightbox');
+        const lbImg = document.getElementById('lightbox-img');
+        const lbTitle = document.getElementById('lightbox-title');
+        const lbCat = document.getElementById('lightbox-category');
+        const lbDownload = document.getElementById('lightbox-download');
+        const closeBtn = document.getElementById('lightbox-close');
+
+        function openLightbox(url, title, category, client) {
+            lbImg.src = url;
+            lbTitle.innerText = title;
+            lbCat.innerText = category + " | " + client;
+            
+            lbDownload.href = url;
+            const fileName = url.split('/').pop();
+            lbDownload.download = fileName;
+
+            lightbox.classList.add('active');
+            document.body.style.overflow = 'hidden'; 
+        }
+
+        function closeLightbox() {
+            lightbox.classList.remove('active');
+            document.body.style.overflow = 'auto'; 
+            setTimeout(() => { if(!lightbox.classList.contains('active')) lbImg.src = ''; }, 400);
+        }
+
+        closeBtn.onclick = closeLightbox;
+
+        lightbox.onclick = (e) => {
+            if(e.target === lightbox) {
+                closeLightbox();
+            }
+        };
+    </script>
+</body>
+</html>
 
         #gl-viewport {
             position: fixed;
