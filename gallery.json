@@ -1,26 +1,14 @@
-[  {
+[
+  {
+    "title": "Parametric Form: Fluid Architecture",
+    "client": "SK Graphics Internal",
+    "category": "3D Spatial Design",
+    "imageUrl": "./sk-graphics-02.jpg"
+  },
+  {
     "title": "Neon Metropolis: Explore & Create",
     "client": "SK Graphics Internal",
     "category": "Digital Concept Art",
-    "imageUrl": "./sk-graphics-01.jpg"
-  },
-
-  {
-    "title": "Aero Brand System",
-    "client": "Aero Kinetic Lab",
-    "category": "Visual Identity",
-    "imageUrl": "https://picsum.photos/1200/1200?random=1"
-  },
-  {
-    "title": "Form & Cipher",
-    "client": "Self-Directed System",
-    "category": "Editorial & Typography",
-    "imageUrl": "https://picsum.photos/1200/1200?random=2"
-  },
-  {
-    "title": "Chronos Motion Engine",
-    "client": "Vektor Corp",
-    "category": "Kinetic Direction",
-    "imageUrl": "https://picsum.photos/1200/1200?random=3"
+    "imageUrl": "./Sk-graphics-01.jpg"
   }
 ]
