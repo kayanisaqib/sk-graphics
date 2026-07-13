@@ -4,7 +4,6 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     
-    <!-- Professional SEO Tags -->
     <title>SK Graphics | Digital Brand Design & Interactive Web Solutions</title>
     <meta name="description" content="Official portfolio of SK Graphics. Specializing in WebGL structures, fluid animations, and high-conversion digital brand design.">
     
@@ -13,11 +12,10 @@
             margin: 0; 
             padding: 0;
             width: 100%;
-            height: 100%;
             font-family: 'Segoe UI', Roboto, Helvetica, Arial, sans-serif;
             background-color: #050505;
             color: #ffffff;
-            overflow: hidden; /* Keeps everything perfectly on one clean screen */
+            scroll-behavior: smooth;
         }
 
         /* Frosted Glass Navigation Bar */
@@ -46,7 +44,7 @@
         .hero {
             position: relative; 
             width: 100%;
-            height: 100%;
+            height: 100vh;
             display: flex; 
             flex-direction: column;
             justify-content: center; 
@@ -82,6 +80,33 @@
             font-weight: 300; 
             letter-spacing: 3px; 
         }
+
+        /* Automated Image Gallery Section */
+        .gallery-section {
+            padding: 80px 20px;
+            max-width: 1200px;
+            margin: 0 auto;
+            position: relative;
+            z-index: 10;
+        }
+
+        .gallery-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
+            gap: 30px;
+        }
+
+        .gallery-grid img {
+            width: 100%;
+            height: auto;
+            border-radius: 8px;
+            box-shadow: 0 10px 30px rgba(0, 0, 0, 0.5);
+            transition: transform 0.3s ease;
+        }
+
+        .gallery-grid img:hover {
+            transform: scale(1.02);
+        }
     </style>
 </head>
 <body>
@@ -100,8 +125,15 @@
         </div>
     </section>
 
-    <!-- Kinetic Background Script -->
+    <!-- Portfolio Gallery Section -->
+    <section class="gallery-section">
+        <div class="gallery-grid" id="auto-gallery">
+            <!-- The script below will automatically place your images here -->
+        </div>
+    </section>
+
     <script>
+        // Kinetic Background Animation
         const canvas = document.getElementById('glcanvas');
         const ctx = canvas.getContext('2d');
         let width, height;
@@ -169,6 +201,33 @@
             requestAnimationFrame(animate);
         }
         animate();
+
+        // Automated GitHub Image Fetcher
+        async function loadPortfolioImages() {
+            const repoUrl = 'https://api.github.com/repos/kayanisaqib/sk-graphics/contents/';
+            
+            try {
+                const response = await fetch(repoUrl);
+                const files = await response.json();
+                const gallery = document.getElementById('auto-gallery');
+                
+                // Loops through everything you uploaded to GitHub
+                files.forEach(file => {
+                    // If it is an image file, it puts it on your website
+                    if (file.name.match(/\.(jpeg|jpg|png|gif|webp)$/i)) {
+                        const img = document.createElement('img');
+                        img.src = file.name;
+                        img.alt = "SK Graphics Digital Design";
+                        gallery.appendChild(img);
+                    }
+                });
+            } catch (error) {
+                console.log("Error finding images:", error);
+            }
+        }
+        
+        // Run the fetcher immediately
+        loadPortfolioImages();
     </script>
 </body>
 </html>
