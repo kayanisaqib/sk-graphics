@@ -1,0 +1,89 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <style>
+        * { margin: 0; padding: 0; box-sizing: border-box; }
+        html, body { width: 100%; height: 100%; overflow: hidden; background: #000; }
+        canvas { width: 100%; height: 100%; display: block; }
+    </style>
+</head>
+<body>
+    <canvas id="glcanvas"></canvas>
+    <script>
+        const canvas = document.getElementById('glcanvas');
+        const gl = canvas.getContext('webgl', { powerPreference: "high-performance", antialias: false });
+
+        const vs = `attribute vec2 p; void main(){ gl_Position = vec4(p, 0.0, 1.0); }`;
+        const fs = `
+            precision mediump float;
+            uniform vec2 u_res;
+            uniform vec2 u_mouse;
+            uniform float u_time;
+
+            void main() {
+                vec2 uv = (gl_FragCoord.xy - 0.5 * u_res.xy) / min(u_res.x, u_res.y);
+                float wave = 0.0;
+                
+                for (int i = 1; i <= 3; i++) {
+                    float f = float(i);
+                    wave += sin(uv.x * (4.0 * f) + u_time * (1.2 * f) + u_mouse.x * 2.0) * (0.08 / f);
+                }
+
+                float dist = abs(uv.y - wave);
+                float glow = 0.02 / (dist + 0.03);
+                
+                vec3 col = vec3(0.15, 0.45, 0.95) * glow;
+                col += vec3(0.9, 0.95, 1.0) * pow(glow * 0.15, 2.0);
+                col *= (1.0 - length(uv) * 0.4);
+
+                gl_FragColor = vec4(col, 1.0);
+            }
+        `;
+
+        function compile(type, src) { const s = gl.createShader(type); gl.shaderSource(s, src); gl.compileShader(s); return s; }
+        const prog = gl.createProgram();
+        gl.attachShader(prog, compile(gl.VERTEX_SHADER, vs));
+        gl.attachShader(prog, compile(gl.FRAGMENT_SHADER, fs));
+        gl.linkProgram(prog);
+        gl.useProgram(prog);
+
+        const buf = gl.createBuffer();
+        gl.bindBuffer(gl.ARRAY_BUFFER, buf);
+        gl.bufferData(gl.ARRAY_BUFFER, new Float32Array([-1,-1, 1,-1, -1,1, -1,1, 1,-1, 1,1]), gl.STATIC_DRAW);
+        const pos = gl.getAttribLocation(prog, 'p');
+        gl.enableVertexAttribArray(pos);
+        gl.vertexAttribPointer(pos, 2, gl.FLOAT, false, 0, 0);
+
+        const uRes = gl.getUniformLocation(prog, 'u_res');
+        const uTime = gl.getUniformLocation(prog, 'u_time');
+        const uMouse = gl.getUniformLocation(prog, 'u_mouse');
+
+        let mouse = [0, 0], target = [0, 0];
+        window.addEventListener('mousemove', e => { target = [(e.clientX / window.innerWidth) * 2 - 1, -(e.clientY / window.innerHeight) * 2 + 1]; });
+        window.addEventListener('touchmove', e => { if (e.touches[0]) target = [(e.touches[0].clientX / window.innerWidth) * 2 - 1, -(e.touches[0].clientY / window.innerHeight) * 2 + 1]; }, { passive: true });
+
+        function resize() {
+            canvas.width = 360;
+            canvas.height = 240;
+            gl.viewport(0, 0, canvas.width, canvas.height);
+        }
+        window.addEventListener('resize', resize);
+        resize();
+
+        let t0 = performance.now();
+        function loop() {
+            const time = (performance.now() - t0) * 0.001;
+            mouse[0] += (target[0] - mouse[0]) * 0.08;
+            mouse[1] += (target[1] - mouse[1]) * 0.08;
+            gl.uniform2f(uRes, canvas.width, canvas.height);
+            gl.uniform1f(uTime, time);
+            gl.uniform2f(uMouse, mouse[0], mouse[1]);
+            gl.drawArrays(gl.TRIANGLES, 0, 6);
+            requestAnimationFrame(loop);
+        }
+        loop();
+    </script>
+</body>
+</html>
