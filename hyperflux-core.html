@@ -1,0 +1,181 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Hyperflux Core // Relativistic Singularity Engine</title>
+    <style>
+        * { margin: 0; padding: 0; box-sizing: border-box; }
+        html, body { width: 100%; height: 100%; overflow: hidden; background: #000000; }
+        canvas { width: 100%; height: 100%; display: block; }
+    </style>
+</head>
+<body>
+    <canvas id="glcanvas"></canvas>
+
+    <script>
+        const canvas = document.getElementById('glcanvas');
+        const gl = canvas.getContext('webgl') || canvas.getContext('experimental-webgl');
+
+        if (!gl) {
+            alert('WebGL not supported');
+        }
+
+        const vertexShaderSource = `
+            attribute vec2 position;
+            void main() {
+                gl_Position = vec4(position, 0.0, 1.0);
+            }
+        `;
+
+        const fragmentShaderSource = `
+            precision highp float;
+            uniform vec2 u_resolution;
+            uniform vec2 u_mouse;
+            uniform float u_time;
+
+            mat2 rot(float a) {
+                float s = sin(a), c = cos(a);
+                return mat2(c, -s, s, c);
+            }
+
+            void main() {
+                vec2 uv = (gl_FragCoord.xy - 0.5 * u_resolution.xy) / min(u_resolution.x, u_resolution.y);
+                
+                // Dynamic camera and cursor influence
+                vec3 ro = vec3(0.0, 1.4, -3.2);
+                vec3 target = vec3(u_mouse.x * 0.4, u_mouse.y * 0.4, 0.0);
+                
+                vec3 ww = normalize(target - ro);
+                vec3 uu = normalize(cross(ww, vec3(0.0, 1.0, 0.0)));
+                vec3 vv = normalize(cross(uu, ww));
+                vec3 rd = normalize(uv.x * uu + uv.y * vv + 1.2 * ww);
+
+                // Gravitational lensing simulation around black hole core
+                vec3 p = ro;
+                vec3 col = vec3(0.0);
+                float minL = 100.0;
+                float accretionGlow = 0.0;
+
+                for (int i = 0; i < 75; i++) {
+                    float r = length(p);
+                    minL = min(minL, r);
+
+                    // Event horizon trap
+                    if (r < 0.65) {
+                        break;
+                    }
+
+                    // Accretion disk volumetric density
+                    float diskDist = abs(p.y);
+                    if (diskDist < 0.28 && r > 0.85 && r < 2.6) {
+                        vec3 q = p;
+                        q.xz *= rot(u_time * 1.5 + r * 2.2);
+                        float density = (1.0 - diskDist / 0.28) * smoothstep(2.6, 1.2, r);
+                        density *= (0.6 + 0.4 * sin(atan(q.z, q.x) * 6.0 + r * 8.0 - u_time * 3.0));
+                        accretionGlow += density * 0.038;
+                    }
+
+                    // Space-time geodesic curvature
+                    vec3 force = -normalize(p) / (r * r * 1.8 + 0.1);
+                    rd += force * 0.04;
+                    rd = normalize(rd);
+                    p += rd * 0.065;
+                }
+
+                // Core event horizon silhouette
+                if (minL < 0.65) {
+                    col = vec3(0.0);
+                } else {
+                    // Deep space chromatic background
+                    float stars = pow(fract(sin(dot(rd.xy, vec2(12.9898, 78.233))) * 43758.5453), 22.0);
+                    col = vec3(stars * 0.35);
+                }
+
+                // Accretion disk spectral coloring (high-energy white/cyan to deep blue)
+                vec3 diskCol = mix(vec3(0.1, 0.4, 0.9), vec3(0.9, 0.95, 1.0), accretionGlow * 1.4);
+                col += diskCol * accretionGlow * 2.4;
+
+                // Relativistic photon ring rim glow
+                float photonRing = 0.015 / (abs(minL - 0.72) + 0.02);
+                col += vec3(0.6, 0.8, 1.0) * photonRing * 0.25;
+
+                // Tone mapping & Vignette
+                col = pow(col, vec3(1.1));
+                col *= 1.0 - length(uv) * 0.45;
+
+                gl_FragColor = vec4(col, 1.0);
+            }
+        `;
+
+        function createShader(gl, type, source) {
+            const shader = gl.createShader(type);
+            gl.shaderSource(shader, source);
+            gl.compileShader(shader);
+            return shader;
+        }
+
+        const program = gl.createProgram();
+        gl.attachShader(program, createShader(gl, gl.VERTEX_SHADER, vertexShaderSource));
+        gl.attachShader(program, createShader(gl, gl.FRAGMENT_SHADER, fragmentShaderSource));
+        gl.linkProgram(program);
+        gl.useProgram(program);
+
+        const positionLocation = gl.getAttribLocation(program, 'position');
+        const buffer = gl.createBuffer();
+        gl.bindBuffer(gl.ARRAY_BUFFER, buffer);
+        gl.bufferData(gl.ARRAY_BUFFER, new Float32Array([
+            -1, -1,  1, -1, -1,  1,
+            -1,  1,  1, -1,  1,  1
+        ]), gl.STATIC_DRAW);
+        gl.enableVertexAttribArray(positionLocation);
+        gl.vertexAttribPointer(positionLocation, 2, gl.FLOAT, false, 0, 0);
+
+        const resLocation = gl.getUniformLocation(program, 'u_resolution');
+        const timeLocation = gl.getUniformLocation(program, 'u_time');
+        const mouseLocation = gl.getUniformLocation(program, 'u_mouse');
+
+        let targetMouse = { x: 0.0, y: 0.0 };
+        let currentMouse = { x: 0.0, y: 0.0 };
+
+        function updateMouse(x, y) {
+            targetMouse.x = (x / window.innerWidth) * 2.0 - 1.0;
+            targetMouse.y = -(y / window.innerHeight) * 2.0 + 1.0;
+        }
+
+        window.addEventListener('mousemove', (e) => updateMouse(e.clientX, e.clientY));
+        window.addEventListener('touchmove', (e) => {
+            if (e.touches.length > 0) {
+                updateMouse(e.touches[0].clientX, e.touches[0].clientY);
+            }
+        }, { passive: true });
+
+        function resize() {
+            const dpr = Math.min(window.devicePixelRatio || 1, 2);
+            canvas.width = window.innerWidth * dpr;
+            canvas.height = window.innerHeight * dpr;
+            gl.viewport(0, 0, canvas.width, canvas.height);
+        }
+        window.addEventListener('resize', resize);
+        resize();
+
+        let startTime = performance.now();
+
+        function render() {
+            const currentTime = (performance.now() - startTime) * 0.001;
+            
+            currentMouse.x += (targetMouse.x - currentMouse.x) * 0.05;
+            currentMouse.y += (targetMouse.y - currentMouse.y) * 0.05;
+
+            gl.uniform2f(resLocation, canvas.width, canvas.height);
+            gl.uniform1f(timeLocation, currentTime);
+            gl.uniform2f(mouseLocation, currentMouse.x, currentMouse.y);
+
+            gl.drawArrays(gl.TRIANGLES, 0, 6);
+            requestAnimationFrame(render);
+        }
+
+        render();
+    </script>
+</body>
+</html>
