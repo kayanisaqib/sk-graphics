@@ -1,0 +1,244 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    
+    <title>SK Graphics | Premium WebGL & Interactive 3D UI Assets</title>
+    <meta name="description" content="High-performance digital architecture. Downloadable WebGL environments, custom HTML5 canvas animations, and interactive 3D spatial UI kits for modern brands.">
+    <meta name="keywords" content="WebGL templates, 3D UI kits, parametric architecture assets, interactive canvas, premium digital design">
+    
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Montserrat:wght@300;400;600;700&family=Playfair+Display:wght@600;700&display=swap" rel="stylesheet">
+    
+    <style>
+        body, html {
+            margin: 0; padding: 0; width: 100%;
+            font-family: 'Montserrat', sans-serif;
+            background-color: #050505; color: #ffffff;
+            scroll-behavior: smooth;
+        }
+
+        nav {
+            position: fixed; top: 0; width: 100%;
+            padding: 20px 40px; box-sizing: border-box;
+            display: flex; justify-content: space-between; align-items: center;
+            z-index: 100; background: rgba(5, 5, 5, 0.8);
+            backdrop-filter: blur(15px); border-bottom: 1px solid rgba(255,255,255,0.05);
+        }
+
+        .logo { font-family: 'Playfair Display', serif; font-size: 1.5rem; font-weight: 700; letter-spacing: 2px; }
+
+        .hero {
+            position: relative; width: 100%; height: 100vh;
+            display: flex; flex-direction: column; justify-content: center; align-items: center; text-align: center;
+        }
+
+        #glcanvas { position: absolute; top: 0; left: 0; width: 100%; height: 100%; z-index: 1; opacity: 0.6; }
+        .hero-content { z-index: 2; pointer-events: none; max-width: 800px; padding: 0 20px; }
+        
+        h1 { font-family: 'Playfair Display', serif; font-size: clamp(3rem, 6vw, 5.5rem); letter-spacing: 4px; margin-bottom: 15px; }
+        h2 { font-size: clamp(1rem, 2vw, 1.4rem); color: #ffffff; font-weight: 600; letter-spacing: 3px; text-transform: uppercase; margin-bottom: 15px; }
+        .hero-subtext { font-size: clamp(0.85rem, 1.2vw, 1rem); color: #aaaaaa; font-weight: 300; letter-spacing: 1px; line-height: 1.6; }
+
+        .scroll-indicator {
+            position: absolute; bottom: 40px; left: 50%; transform: translateX(-50%);
+            z-index: 10; color: #ffffff; text-decoration: none; font-size: 0.8rem;
+            letter-spacing: 3px; font-weight: 600; display: flex; flex-direction: column; align-items: center;
+            animation: bounce 2s infinite; opacity: 0.7;
+        }
+        @keyframes bounce {
+            0%, 20%, 50%, 80%, 100% { transform: translateY(0) translateX(-50%); }
+            40% { transform: translateY(-15px) translateX(-50%); }
+            60% { transform: translateY(-7px) translateX(-50%); }
+        }
+
+        .gallery-section { padding: 100px 20px; max-width: 1300px; margin: 0 auto; position: relative; z-index: 10; }
+        .gallery-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(320px, 1fr)); gap: 40px; }
+
+        .gallery-card {
+            background: #111111; border: 1px solid #222222; border-radius: 8px;
+            overflow: hidden; transition: transform 0.3s ease; display: flex; flex-direction: column;
+        }
+        .gallery-card:hover { transform: translateY(-5px); border: 1px solid #444; }
+
+        .preview-container {
+            width: 100%; height: 350px; position: relative; background: #000; border-bottom: 1px solid #222222;
+        }
+
+        .gallery-card img {
+            width: 100%; height: 100%; object-fit: cover; display: block; cursor: pointer;
+        }
+
+        .gallery-card iframe {
+            width: 100%; height: 100%; border: none; display: block;
+        }
+
+        .card-content { padding: 25px; text-align: left; flex-grow: 1; display: flex; flex-direction: column; }
+        
+        .card-meta { display: flex; justify-content: space-between; font-size: 0.75rem; letter-spacing: 1px; color: #888; margin-bottom: 15px; text-transform: uppercase; font-weight: 600; }
+        .card-meta span { background: #222; padding: 4px 8px; border-radius: 4px; }
+        .live-tag { background: #00e676 !important; color: #000 !important; font-weight: 700; }
+
+        .card-title { font-size: 1.2rem; font-weight: 700; letter-spacing: 1px; margin: 0 0 15px 0; color: #ffffff; }
+        .card-desc { font-size: 0.85rem; color: #aaaaaa; margin: 0 0 25px 0; line-height: 1.6; font-weight: 300; flex-grow: 1; }
+        
+        .card-actions { display: flex; gap: 10px; margin-top: auto; }
+        .action-btn {
+            flex: 1; padding: 12px; background: #ffffff; color: #000000;
+            text-decoration: none; font-size: 0.75rem; font-weight: 700; letter-spacing: 1.5px;
+            border-radius: 4px; transition: 0.3s; text-align: center; text-transform: uppercase;
+        }
+        .action-btn:hover { background: #cccccc; }
+        .action-btn.secondary {
+            background: transparent; color: #ffffff; border: 1px solid #444;
+        }
+        .action-btn.secondary:hover { background: #222; border-color: #777; }
+
+        .lightbox {
+            display: none; position: fixed; z-index: 999; left: 0; top: 0; width: 100%; height: 100%;
+            background-color: rgba(0, 0, 0, 0.95); align-items: center; justify-content: center; backdrop-filter: blur(5px);
+        }
+        .lightbox img { max-width: 95%; max-height: 95%; border-radius: 4px; box-shadow: 0 0 30px rgba(0,0,0,0.8); }
+        .close-btn { position: absolute; top: 20px; right: 30px; color: white; font-size: 40px; font-weight: 300; cursor: pointer; }
+    </style>
+</head>
+<body>
+
+    <nav>
+        <div class="logo">SK GRAPHICS</div>
+    </nav>
+
+    <section class="hero" id="home">
+        <canvas id="glcanvas"></canvas>
+        <div class="hero-content">
+            <h1>SK Graphics</h1>
+            <h2>Premium Interactive 3D & WebGL Assets</h2>
+            <p class="hero-subtext">High-performance digital architecture. Downloadable spatial web environments and custom canvas structures for modern agency workflows.</p>
+        </div>
+        <a href="#portfolio" class="scroll-indicator">SCROLL TO EXPLORE<br><br>&#8595;</a>
+    </section>
+
+    <section class="gallery-section" id="portfolio">
+        <div class="gallery-grid" id="portfolio-gallery"></div>
+    </section>
+
+    <div id="lightbox" class="lightbox" onclick="closeLightbox()">
+        <span class="close-btn">&times;</span>
+        <img id="lightbox-img" src="" alt="Fullscreen View">
+    </div>
+
+    <script>
+        async function loadExternalJSON() {
+            try {
+                const response = await fetch('gallery.json'); 
+                const data = await response.json();
+                const gallery = document.getElementById('portfolio-gallery');
+
+                data.forEach(item => {
+                    const card = document.createElement('div');
+                    card.className = 'gallery-card';
+
+                    const assetPath = item.assetUrl || item.imageUrl;
+                    const isInteractive = item.type === 'interactive' || assetPath.endsWith('.html');
+                    const categoryText = item.category || 'Asset';
+                    const clientText = item.client || 'Premium';
+                    const descriptionText = item.description || '';
+
+                    let mediaHTML = '';
+                    let actionButtonsHTML = '';
+
+                    if (isInteractive) {
+                        mediaHTML = `<iframe src="${assetPath}" title="${item.title}" loading="lazy"></iframe>`;
+                        actionButtonsHTML = `
+                            <a href="${assetPath}" target="_blank" class="action-btn">Open Full</a>
+                            <a href="${assetPath}" download class="action-btn secondary">&#8595; Source</a>
+                        `;
+                    } else {
+                        mediaHTML = `<img src="${assetPath}" alt="${item.title}" onclick="openLightbox('${assetPath}')">`;
+                        actionButtonsHTML = `
+                            <a href="${assetPath}" download class="action-btn">&#8595; Download Asset</a>
+                        `;
+                    }
+
+                    card.innerHTML = `
+                        <div class="preview-container">
+                            ${mediaHTML}
+                        </div>
+                        <div class="card-content">
+                            <div class="card-meta">
+                                <span>${categoryText}</span>
+                                <span class="${isInteractive ? 'live-tag' : ''}">${isInteractive ? '● LIVE ENGINE' : clientText}</span>
+                            </div>
+                            <h3 class="card-title">${item.title}</h3>
+                            <p class="card-desc">${descriptionText}</p>
+                            <div class="card-actions">
+                                ${actionButtonsHTML}
+                            </div>
+                        </div>
+                    `;
+                    gallery.appendChild(card);
+                });
+            } catch (error) {
+                console.error("Error loading JSON file:", error);
+            }
+        }
+        
+        loadExternalJSON();
+
+        function openLightbox(imageSrc) {
+            document.getElementById('lightbox-img').src = imageSrc;
+            document.getElementById('lightbox').style.display = 'flex';
+            document.body.style.overflow = 'hidden'; 
+        }
+
+        function closeLightbox() {
+            document.getElementById('lightbox').style.display = 'none';
+            document.body.style.overflow = 'auto'; 
+        }
+
+        const canvas = document.getElementById('glcanvas');
+        const ctx = canvas.getContext('2d');
+        let width, height; let particles = [];
+
+        function resize() { width = canvas.width = window.innerWidth; height = canvas.height = window.innerHeight; }
+        window.addEventListener('resize', resize); resize();
+
+        class Particle {
+            constructor() {
+                this.x = Math.random() * width; this.y = Math.random() * height;
+                this.vx = (Math.random() - 0.5) * 0.8; this.vy = (Math.random() - 0.5) * 0.8;
+                this.size = Math.random() * 1.5 + 0.5;
+            }
+            update() {
+                this.x += this.vx; this.y += this.vy;
+                if (this.x < 0 || this.x > width) this.vx *= -1;
+                if (this.y < 0 || this.y > height) this.vy *= -1;
+            }
+            draw() {
+                ctx.fillStyle = 'rgba(255, 255, 255, 0.3)'; ctx.beginPath();
+                ctx.arc(this.x, this.y, this.size, 0, Math.PI * 2); ctx.fill();
+            }
+        }
+
+        for (let i = 0; i < 90; i++) { particles.push(new Particle()); }
+
+        function animate() {
+            ctx.clearRect(0, 0, width, height);
+            for (let i = 0; i < particles.length; i++) {
+                for (let j = i; j < particles.length; j++) {
+                    const dx = particles[i].x - particles[j].x; const dy = particles[i].y - particles[j].y;
+                    const distance = Math.sqrt(dx * dx + dy * dy);
+                    if (distance < 150) {
+                        ctx.beginPath(); ctx.strokeStyle = `rgba(255, 255, 255, ${(150 - distance) / 1200})`;
+                        ctx.lineWidth = 0.8; ctx.moveTo(particles[i].x, particles[i].y); ctx.lineTo(particles[j].x, particles[j].y); ctx.stroke();
+                    }
+                }
+            }
+            particles.forEach(p => { p.update(); p.draw(); }); requestAnimationFrame(animate);
+        }
+        animate();
+    </script>
+</body>
+</html>
