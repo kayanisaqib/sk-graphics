@@ -1,0 +1,400 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <title>AURA // Autonomous Substrate</title>
+    
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@300;400;600;800&family=Space+Mono:wght@400;700&display=swap" rel="stylesheet">
+
+    <style>
+        * { margin: 0; padding: 0; box-sizing: border-box; }
+        html, body {
+            width: 100%; height: 100%;
+            overflow: hidden;
+            background-color: #040406;
+            color: #ffffff;
+            font-family: 'Plus Jakarta Sans', sans-serif;
+            -webkit-font-smoothing: antialiased;
+        }
+
+        /* Master Viewport Grid */
+        .stage {
+            display: flex;
+            flex-direction: column;
+            width: 100%;
+            height: 100%;
+            position: relative;
+            z-index: 10;
+        }
+
+        /* Top Technical Navigation */
+        .nav-bar {
+            height: 56px;
+            padding: 0 24px;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            border-bottom: 1px solid rgba(255, 255, 255, 0.08);
+            background: rgba(4, 4, 6, 0.8);
+            backdrop-filter: blur(20px);
+            z-index: 20;
+        }
+
+        .nav-brand {
+            display: flex;
+            align-items: center;
+            gap: 10px;
+            font-family: 'Space Mono', monospace;
+            font-size: 0.75rem;
+            letter-spacing: 2px;
+            font-weight: 700;
+        }
+
+        .status-light {
+            width: 6px; height: 6px;
+            background: #00ff88;
+            border-radius: 50%;
+            box-shadow: 0 0 8px #00ff88;
+        }
+
+        .nav-telemetry {
+            font-family: 'Space Mono', monospace;
+            font-size: 0.7rem;
+            color: #666675;
+            letter-spacing: 1px;
+        }
+        .nav-telemetry span { color: #ffffff; font-weight: 700; }
+
+        /* Main Workspace Split */
+        .workspace {
+            flex: 1;
+            display: flex;
+            flex-direction: column;
+            position: relative;
+            overflow: hidden;
+        }
+
+        /* Dedicated 3D Canvas Zone */
+        .canvas-zone {
+            flex: 1;
+            min-height: 42%;
+            position: relative;
+            width: 100%;
+            background: radial-gradient(circle at 50% 50%, #0d111a 0%, #040406 80%);
+        }
+
+        #glcanvas {
+            position: absolute;
+            top: 0; left: 0;
+            width: 100%; height: 100%;
+            display: block;
+        }
+
+        /* Interface & Content Zone */
+        .content-zone {
+            padding: 24px;
+            background: #040406;
+            border-top: 1px solid rgba(255, 255, 255, 0.08);
+            display: flex;
+            flex-direction: column;
+            justify-content: flex-end;
+            z-index: 15;
+        }
+
+        .category-tag {
+            display: inline-flex;
+            align-items: center;
+            gap: 8px;
+            font-family: 'Space Mono', monospace;
+            font-size: 0.65rem;
+            color: #00e676;
+            letter-spacing: 2px;
+            text-transform: uppercase;
+            margin-bottom: 12px;
+        }
+
+        .headline {
+            font-size: clamp(2.2rem, 5vw, 4rem);
+            font-weight: 800;
+            line-height: 1.0;
+            letter-spacing: -1.5px;
+            text-transform: uppercase;
+            margin-bottom: 12px;
+            background: linear-gradient(180deg, #ffffff 40%, #888899 100%);
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+        }
+
+        .description {
+            font-size: 0.88rem;
+            font-weight: 400;
+            line-height: 1.55;
+            color: #8c8c9e;
+            max-width: 480px;
+            margin-bottom: 24px;
+        }
+
+        /* High-Grade Action Controls */
+        .action-row {
+            display: flex;
+            gap: 12px;
+            width: 100%;
+        }
+
+        .btn-core {
+            flex: 1;
+            padding: 15px 20px;
+            background: #ffffff;
+            color: #000000;
+            border: none;
+            border-radius: 4px;
+            font-family: 'Plus Jakarta Sans', sans-serif;
+            font-size: 0.75rem;
+            font-weight: 700;
+            letter-spacing: 1.5px;
+            text-transform: uppercase;
+            cursor: pointer;
+            transition: all 0.2s ease;
+            text-align: center;
+            text-decoration: none;
+        }
+        .btn-core:active { transform: scale(0.98); background: #e0e0e0; }
+
+        .btn-ghost {
+            flex: 1;
+            padding: 15px 20px;
+            background: rgba(255, 255, 255, 0.03);
+            color: #ffffff;
+            border: 1px solid rgba(255, 255, 255, 0.15);
+            border-radius: 4px;
+            font-family: 'Plus Jakarta Sans', sans-serif;
+            font-size: 0.75rem;
+            font-weight: 600;
+            letter-spacing: 1.5px;
+            text-transform: uppercase;
+            cursor: pointer;
+            transition: all 0.2s ease;
+            text-align: center;
+            text-decoration: none;
+        }
+        .btn-ghost:active { background: rgba(255, 255, 255, 0.08); }
+
+        /* Desktop Dual-Column Enhancement */
+        @media (min-width: 900px) {
+            .workspace {
+                flex-direction: row-reverse;
+            }
+            .canvas-zone {
+                flex: 1.2;
+                min-height: 100%;
+            }
+            .content-zone {
+                flex: 1;
+                border-top: none;
+                border-right: 1px solid rgba(255, 255, 255, 0.08);
+                padding: 60px 48px;
+                justify-content: center;
+            }
+            .action-row {
+                max-width: 380px;
+            }
+        }
+    </style>
+</head>
+<body>
+
+    <div class="stage">
+        <header class="nav-bar">
+            <div class="nav-brand">
+                <div class="status-light"></div>
+                AURA // SYSTEM v4.9
+            </div>
+            <div class="nav-telemetry">
+                ENGINE: <span>60 FPS // GLSL</span>
+            </div>
+        </header>
+
+        <main class="workspace">
+            <section class="canvas-zone" id="canvas-container">
+                <canvas id="glcanvas"></canvas>
+            </section>
+
+            <section class="content-zone">
+                <div class="category-tag">● Spatial Computing Substrate</div>
+                <h1 class="headline">Neural<br>Architect.</h1>
+                <p class="description">Zero-dependency GLSL raymarching engine engineered for next-generation spatial computing, real-time kinetic interfaces, and autonomous AI systems.</p>
+                
+                <div class="action-row">
+                    <button class="btn-core" onclick="triggerShockwave()">Initialize Core</button>
+                    <a href="https://skgraphics.site" class="btn-ghost">Catalog</a>
+                </div>
+            </section>
+        </main>
+    </div>
+
+    <script>
+        const canvas = document.getElementById('glcanvas');
+        const container = document.getElementById('canvas-container');
+        const gl = canvas.getContext('webgl', { powerPreference: "high-performance", alpha: false, antialias: false });
+
+        const vs = `attribute vec2 position; void main() { gl_Position = vec4(position, 0.0, 1.0); }`;
+
+        const fs = `
+            precision highp float;
+            uniform vec2 u_resolution;
+            uniform vec2 u_mouse;
+            uniform float u_time;
+            uniform float u_shock;
+
+            mat2 rot(float a) {
+                float s = sin(a), c = cos(a);
+                return mat2(c, -s, s, c);
+            }
+
+            // Sculpted Crystalline Core SDF
+            float sdCore(vec3 p) {
+                vec3 q = p;
+                q.xz *= rot(u_time * 0.25 + u_mouse.x * 2.0);
+                q.yz *= rot(u_time * 0.2 + u_mouse.y * 2.0);
+
+                // Octahedral crystalline slice
+                float d1 = (abs(q.x) + abs(q.y) + abs(q.z)) - (1.35 + u_shock * 0.3);
+                
+                // Gyroid internal structure
+                vec3 gP = q * 4.2;
+                float gyroid = abs(dot(sin(gP), cos(gP.zxy)) - 0.15) / 4.2 - 0.035;
+                
+                return max(d1, gyroid);
+            }
+
+            vec3 calcNormal(vec3 p) {
+                vec2 e = vec2(0.002, 0.0);
+                return normalize(vec3(
+                    sdCore(p + e.xyy) - sdCore(p - e.xyy),
+                    sdCore(p + e.yxy) - sdCore(p - e.yxy),
+                    sdCore(p + e.yyx) - sdCore(p - e.yyx)
+                ));
+            }
+
+            void main() {
+                vec2 uv = (gl_FragCoord.xy - 0.5 * u_resolution.xy) / min(u_resolution.x, u_resolution.y);
+                
+                vec3 ro = vec3(0.0, 0.0, 3.6);
+                vec3 rd = normalize(vec3(uv, -1.35));
+
+                float t = 0.0;
+                float glow = 0.0;
+                bool hit = false;
+                vec3 p;
+
+                for (int i = 0; i < 48; i++) {
+                    p = ro + rd * t;
+                    float d = sdCore(p);
+                    glow += 0.012 / (abs(d) + 0.035);
+                    if (abs(d) < 0.002) { hit = true; break; }
+                    if (t > 6.5) break;
+                    t += d * 0.75;
+                }
+
+                // Studio dark-field background
+                vec3 col = vec3(0.02, 0.03, 0.05) * (1.0 - length(uv) * 0.6);
+
+                if (hit) {
+                    vec3 n = calcNormal(p);
+                    vec3 l = normalize(vec3(1.5, 2.5, 2.0));
+                    vec3 v = -rd;
+
+                    float diff = max(dot(n, l), 0.0);
+                    vec3 h = normalize(l + v);
+                    float spec = pow(max(dot(n, h), 0.0), 64.0);
+                    float fresnel = pow(1.0 - max(dot(v, n), 0.0), 3.0);
+
+                    // Liquid Titanium Specular Shading
+                    vec3 base = mix(vec3(0.05, 0.08, 0.15), vec3(0.85, 0.92, 1.0), fresnel);
+                    col = base * (diff * 0.6 + 0.4) + vec3(1.0) * spec * 1.4;
+                }
+
+                // Cyan-Electric Aura & Shockwave
+                vec3 glowCol = mix(vec3(0.1, 0.45, 0.95), vec3(0.0, 1.0, 0.6), u_shock * 1.5);
+                col += glowCol * glow * (0.16 + u_shock * 0.25);
+                col += vec3(0.9, 0.95, 1.0) * pow(glow * 0.038, 2.2);
+
+                // ACES Filmic Tonemap
+                col = (col * (2.51 * col + 0.03)) / (col * (2.43 * col + 0.59) + 0.14);
+
+                gl_FragColor = vec4(col, 1.0);
+            }
+        `;
+
+        function createShader(gl, type, source) {
+            const s = gl.createShader(type);
+            gl.shaderSource(s, source);
+            gl.compileShader(s);
+            return s;
+        }
+
+        const prog = gl.createProgram();
+        gl.attachShader(prog, createShader(gl, gl.VERTEX_SHADER, vs));
+        gl.attachShader(prog, createShader(gl, gl.FRAGMENT_SHADER, fs));
+        gl.linkProgram(prog);
+        gl.useProgram(prog);
+
+        const posLoc = gl.getAttribLocation(prog, 'position');
+        const buf = gl.createBuffer();
+        gl.bindBuffer(gl.ARRAY_BUFFER, buf);
+        gl.bufferData(gl.ARRAY_BUFFER, new Float32Array([-1,-1, 1,-1, -1,1, -1,1, 1,-1, 1,1]), gl.STATIC_DRAW);
+        gl.enableVertexAttribArray(posLoc);
+        gl.vertexAttribPointer(posLoc, 2, gl.FLOAT, false, 0, 0);
+
+        const uRes = gl.getUniformLocation(prog, 'u_resolution');
+        const uTime = gl.getUniformLocation(prog, 'u_time');
+        const uMouse = gl.getUniformLocation(prog, 'u_mouse');
+        const uShock = gl.getUniformLocation(prog, 'u_shock');
+
+        let targetMouse = [0, 0], mouse = [0, 0], shock = 0.0;
+
+        function updateCoords(clientX, clientY) {
+            const rect = canvas.getBoundingClientRect();
+            targetMouse[0] = ((clientX - rect.left) / rect.width) * 2.0 - 1.0;
+            targetMouse[1] = -(((clientY - rect.top) / rect.height) * 2.0 - 1.0);
+        }
+
+        window.addEventListener('mousemove', e => updateCoords(e.clientX, e.clientY));
+        window.addEventListener('touchmove', e => {
+            if (e.touches[0]) updateCoords(e.touches[0].clientX, e.touches[0].clientY);
+        }, { passive: true });
+
+        function triggerShockwave() { shock = 1.0; }
+        canvas.addEventListener('pointerdown', triggerShockwave);
+
+        function resize() {
+            const dpr = Math.min(window.devicePixelRatio || 1, 1.5);
+            canvas.width = Math.floor(container.clientWidth * dpr);
+            canvas.height = Math.floor(container.clientHeight * dpr);
+            gl.viewport(0, 0, canvas.width, canvas.height);
+        }
+        window.addEventListener('resize', resize);
+        resize();
+
+        let t0 = performance.now();
+        function loop() {
+            const time = (performance.now() - t0) * 0.001;
+            mouse[0] += (targetMouse[0] - mouse[0]) * 0.08;
+            mouse[1] += (targetMouse[1] - mouse[1]) * 0.08;
+            shock *= 0.92;
+
+            gl.uniform2f(uRes, canvas.width, canvas.height);
+            gl.uniform1f(uTime, time);
+            gl.uniform2f(uMouse, mouse[0], mouse[1]);
+            gl.uniform1f(uShock, shock);
+
+            gl.drawArrays(gl.TRIANGLES, 0, 6);
+            requestAnimationFrame(loop);
+        }
+        loop();
+    </script>
+</body>
+</html>
