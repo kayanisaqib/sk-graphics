@@ -1,0 +1,50 @@
+[
+  {
+    "title": "Quantum Mesh: Interactive Spatial Grid",
+    "client": "Production Engine",
+    "category": "Interactive Canvas",
+    "assetUrl": "./quantum-mesh.html",
+    "type": "interactive",
+    "description": "Zero-dependency, 60fps responsive canvas mesh with real-time cursor warp physics. Built for SaaS hero sections, dark-mode landing pages, and interactive agency portfolios."
+  },
+  {
+    "title": "Liquid Titanium: Chromatic Quantum Knot",
+    "client": "GPU Shader",
+    "category": "Raymarched Metamaterial",
+    "assetUrl": "./synapse-waves.html",
+    "type": "interactive",
+    "description": "Non-Euclidean torus knot with thin-film chromatic iridescence, dynamic surface ripple physics, and real-time cursor torque. Built for high-tier luxury and fintech landing backdrops."
+  },
+  {
+    "title": "Hyperflux Core: Relativistic Singularity",
+    "client": "Production Engine",
+    "category": "Raymarched Vortex",
+    "assetUrl": "./hyperflux-core.html",
+    "type": "interactive",
+    "description": "Orbital spatial particle accelerator with cursor-following gravity mechanics. Designed for Web3 dashboards, luxury tech hero banners, and futuristic brand identities."
+  },
+  {
+    "title": "Organic Utopia: Cascading Architecture",
+    "client": "SK Graphics Internal",
+    "category": "Environment Design",
+    "assetUrl": "./sk-graphics-03.jpg",
+    "type": "image",
+    "description": "High-performance parametric architectural UI concept featuring cascading spatial geometry. Optimized for premium real estate platforms and luxury web environments requiring interactive 3D spatial integration."
+  },
+  {
+    "title": "Parametric Form: Fluid Architecture",
+    "client": "SK Graphics Internal",
+    "category": "3D Spatial Design",
+    "assetUrl": "./sk-graphics-02.jpg",
+    "type": "image",
+    "description": "Downloadable WebGL-ready fluid architecture asset. Designed for modern tech agencies and SaaS landing pages seeking premium interactive 3D structures and code-driven spatial aesthetics."
+  },
+  {
+    "title": "Neon Metropolis: Explore & Create",
+    "client": "SK Graphics Internal",
+    "category": "Digital Concept Art",
+    "assetUrl": "./sk-graphics-01.jpg",
+    "type": "image",
+    "description": "Cybernetic digital environment for high-conversion web experiences. Built for creative agencies and tech startups to deploy immersive, volumetric lighting concepts within interactive canvas frameworks."
+  }
+]
