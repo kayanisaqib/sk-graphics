@@ -1,0 +1,484 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <title>KINETIC-VOID // Paradoxical Scintillation Matrix</title>
+    <style>
+        * { margin: 0; padding: 0; box-sizing: border-box; }
+        html, body {
+            width: 100%;
+            height: 100%;
+            overflow: hidden;
+            background-color: #000000;
+            touch-action: none;
+            user-select: none;
+            -webkit-user-select: none;
+            cursor: crosshair;
+            font-family: monospace;
+        }
+
+        canvas {
+            width: 100%;
+            height: 100%;
+            display: block;
+            position: absolute;
+            top: 0;
+            left: 0;
+            z-index: 1;
+        }
+
+        /* Minimalist Floating Glass Controls */
+        .controls-dock {
+            position: fixed;
+            bottom: 24px;
+            left: 50%;
+            transform: translateX(-50%);
+            z-index: 10;
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            background: rgba(2, 2, 5, 0.88);
+            border: 1px solid rgba(255, 255, 255, 0.2);
+            padding: 6px 14px;
+            border-radius: 100px;
+            backdrop-filter: blur(20px);
+            -webkit-backdrop-filter: blur(20px);
+            opacity: 0.5;
+            transition: opacity 0.3s cubic-bezier(0.16, 1, 0.3, 1);
+        }
+
+        .controls-dock:hover, .controls-dock:active {
+            opacity: 1;
+        }
+
+        .mode-btn {
+            background: transparent;
+            border: 1px solid rgba(255, 255, 255, 0.2);
+            color: #888899;
+            font-family: inherit;
+            font-size: 0.72rem;
+            font-weight: 700;
+            padding: 6px 12px;
+            border-radius: 100px;
+            cursor: pointer;
+            transition: all 0.2s ease;
+        }
+
+        .mode-btn.active {
+            background: #ffffff;
+            color: #000000;
+            border-color: #ffffff;
+            box-shadow: 0 0 16px rgba(255, 255, 255, 0.9);
+        }
+
+        .audio-btn {
+            background: rgba(255, 255, 255, 0.08);
+            border: 1px solid rgba(255, 255, 255, 0.3);
+            color: #00e5ff;
+            font-family: inherit;
+            font-size: 0.72rem;
+            font-weight: 700;
+            padding: 6px 12px;
+            border-radius: 100px;
+            cursor: pointer;
+            transition: all 0.2s ease;
+        }
+        .audio-btn.muted {
+            color: #666677;
+            border-color: rgba(255, 255, 255, 0.15);
+        }
+
+        .nav-arrow {
+            background: transparent;
+            border: none;
+            color: #ffffff;
+            font-size: 0.95rem;
+            cursor: pointer;
+            padding: 0 4px;
+        }
+    </style>
+</head>
+<body>
+
+    <canvas id="glcanvas"></canvas>
+
+    <div class="controls-dock" id="dock">
+        <button class="audio-btn" id="audio-toggle" onclick="toggleAudio()">🔊 ENTRAINMENT</button>
+        <button class="nav-arrow" onclick="prevMode()">‹</button>
+        <button class="mode-btn active" onclick="setMode(0)">01</button>
+        <button class="mode-btn" onclick="setMode(1)">02</button>
+        <button class="mode-btn" onclick="setMode(2)">03</button>
+        <button class="mode-btn" onclick="setMode(3)">04</button>
+        <button class="mode-btn" onclick="setMode(4)">05</button>
+        <button class="nav-arrow" onclick="nextMode()">›</button>
+    </div>
+
+    <script>
+        // ==========================================================
+        // 1. BINAURAL ENTRAINMENT & FORMANT RESONATOR ENGINE
+        // ==========================================================
+        let audioCtx = null;
+        let isAudioActive = false;
+        let leftOsc, rightOsc, leftGain, rightGain, mergerNode;
+        let subDrone, formantFilter, masterGain;
+        const fundamentalBases = [55.0, 61.74, 65.41, 73.42, 82.41]; // A1, B1, C2, D2, E2
+
+        function initAudio() {
+            if (audioCtx) return;
+            const AudioContext = window.AudioContext || window.webkitAudioContext;
+            audioCtx = new AudioContext();
+
+            masterGain = audioCtx.createGain();
+            masterGain.gain.setValueAtTime(0.18, audioCtx.currentTime);
+
+            // Resonant Formant Body
+            formantFilter = audioCtx.createBiquadFilter();
+            formantFilter.type = 'bandpass';
+            formantFilter.frequency.setValueAtTime(520, audioCtx.currentTime);
+            formantFilter.Q.setValueAtTime(8.0, audioCtx.currentTime);
+
+            // Channel Merger for True Binaural Left/Right Separation
+            mergerNode = audioCtx.createChannelMerger(2);
+
+            leftOsc = audioCtx.createOscillator();
+            rightOsc = audioCtx.createOscillator();
+            leftGain = audioCtx.createGain();
+            rightGain = audioCtx.createGain();
+
+            leftOsc.type = 'sawtooth';
+            rightOsc.type = 'sawtooth';
+
+            // Left Ear: Base Frequency | Right Ear: Base + 6Hz Theta Entrainment
+            leftOsc.frequency.setValueAtTime(fundamentalBases[0], audioCtx.currentTime);
+            rightOsc.frequency.setValueAtTime(fundamentalBases[0] + 6.0, audioCtx.currentTime);
+
+            leftOsc.connect(leftGain);
+            rightOsc.connect(rightGain);
+
+            leftGain.connect(mergerNode, 0, 0);  // Left output
+            rightGain.connect(mergerNode, 0, 1); // Right output
+
+            // Deep Infrasonic Sub-Bass Foundation
+            subDrone = audioCtx.createOscillator();
+            subDrone.type = 'sine';
+            subDrone.frequency.setValueAtTime(fundamentalBases[0] * 0.5, audioCtx.currentTime);
+
+            mergerNode.connect(formantFilter);
+            formantFilter.connect(masterGain);
+            subDrone.connect(masterGain);
+            masterGain.connect(audioCtx.destination);
+
+            leftOsc.start();
+            rightOsc.start();
+            subDrone.start();
+            isAudioActive = true;
+        }
+
+        function toggleAudio() {
+            const btn = document.getElementById('audio-toggle');
+            if (!audioCtx) {
+                initAudio();
+                btn.innerText = '🔊 ENTRAINMENT';
+                btn.classList.remove('muted');
+                return;
+            }
+            if (audioCtx.state === 'suspended') {
+                audioCtx.resume();
+                isAudioActive = true;
+                btn.innerText = '🔊 ENTRAINMENT';
+                btn.classList.remove('muted');
+            } else if (audioCtx.state === 'running') {
+                audioCtx.suspend();
+                isAudioActive = false;
+                btn.innerText = '🔇 MUTED';
+                btn.classList.add('muted');
+            }
+        }
+
+        function triggerKineticDetonation(power = 1.0) {
+            if (!audioCtx || audioCtx.state !== 'running') return;
+            const now = audioCtx.currentTime;
+
+            // Formant Filter Sweep
+            formantFilter.frequency.cancelScheduledValues(now);
+            formantFilter.frequency.setValueAtTime(3600 * power, now);
+            formantFilter.frequency.exponentialRampToValueAtTime(450, now + 0.7);
+
+            // Sub-bass Kinetic Shockwave
+            const shockOsc = audioCtx.createOscillator();
+            const shockGain = audioCtx.createGain();
+            shockOsc.type = 'triangle';
+            shockOsc.frequency.setValueAtTime(120 * power, now);
+            shockOsc.frequency.exponentialRampToValueAtTime(28, now + 0.45);
+
+            shockGain.gain.setValueAtTime(0.5, now);
+            shockGain.gain.exponentialRampToValueAtTime(0.001, now + 0.45);
+
+            shockOsc.connect(shockGain);
+            shockGain.connect(audioCtx.destination);
+            shockOsc.start(now);
+            shockOsc.stop(now + 0.46);
+        }
+
+        function updateAudioDynamics(x, y) {
+            if (!audioCtx || audioCtx.state !== 'running') return;
+            const now = audioCtx.currentTime;
+            
+            // Modulate binaural beat frequency based on pointer velocity (3Hz delta to 14Hz gamma)
+            const beatOffset = 4.0 + (Math.abs(x) + Math.abs(y)) * 8.0;
+            const centerPitch = fundamentalBases[currentMode];
+
+            leftOsc.frequency.setTargetAtTime(centerPitch, now, 0.04);
+            rightOsc.frequency.setTargetAtTime(centerPitch + beatOffset, now, 0.04);
+            
+            const formantTarget = 300 + (y + 1.0) * 1400;
+            formantFilter.frequency.setTargetAtTime(formantTarget, now, 0.04);
+        }
+
+        // ==========================================================
+        // 2. HIGH-INTENSITY OPTICAL PARADOX GLSL KERNEL
+        // ==========================================================
+        const canvas = document.getElementById('glcanvas');
+        const gl = canvas.getContext('webgl', { powerPreference: "high-performance", alpha: false, antialias: false });
+
+        const vs = `attribute vec2 position; void main() { gl_Position = vec4(position, 0.0, 1.0); }`;
+
+        const fs = `
+            precision highp float;
+            uniform vec2 u_resolution;
+            uniform vec2 u_mouse;
+            uniform float u_time;
+            uniform float u_impulse;
+            uniform int u_mode;
+
+            mat2 rot(float a) { float s = sin(a), c = cos(a); return mat2(c, -s, s, c); }
+
+            // Mode 0: Pinna-Brelstaff Relative Counter-Rotation Paradox
+            float mode0(vec2 uv, float offset) {
+                vec2 p = uv * rot(u_time * 0.12 + offset);
+                float r = length(p);
+                float a = atan(p.y, p.x);
+                
+                // Concentric micro-stepped rhomboid rings with opposing angular vectors
+                float ringId = floor(r * 18.0);
+                float dir = mod(ringId, 2.0) == 0.0 ? 1.0 : -1.0;
+                
+                float tooth = sin(a * (28.0 + ringId * 4.0) + dir * u_time * (2.8 + u_impulse * 3.5) + u_mouse.x * 3.0);
+                float band = sin(r * (36.0 + u_impulse * 20.0));
+                
+                return smoothstep(-0.25, 0.25, tooth * band);
+            }
+
+            // Mode 1: Café-Wall Curvature Singularity (Straight Lines Perceived as Bent)
+            float mode1(vec2 uv, float offset) {
+                vec2 p = uv * 16.0;
+                p.x += u_mouse.x * 4.0;
+                p.y += u_mouse.y * 4.0;
+                p *= rot(u_time * 0.08 + offset);
+
+                float row = floor(p.y);
+                float shift = sin(row * 1.5708 + u_time * 1.5) * 0.45;
+                
+                // Staggered chessboard mortar lines
+                float check = step(0.5, fract((p.x + shift) * 0.5)) == step(0.5, fract(p.y * 0.5)) ? 1.0 : 0.0;
+                float mortar = smoothstep(0.06, 0.0, abs(fract(p.y) - 0.5) - 0.46);
+                
+                return mix(check, 0.5, mortar) + u_impulse * 0.3;
+            }
+
+            // Mode 2: Kitaoka Asymmetric Step-Luminance Peripheral Drift Enigma
+            float mode2(vec2 uv, float offset) {
+                vec2 p = uv * rot(u_time * 0.2 + offset);
+                float r = length(p);
+                float a = atan(p.y, p.x);
+
+                // 4-Phase Step Luminance (Black -> Dark Grey -> White -> Light Grey)
+                float teeth = sin(a * 24.0 + log(r + 0.001) * (20.0 + u_impulse * 15.0) - u_time * 3.0);
+                float stepLuma = floor((teeth + 1.0) * 2.0) / 4.0;
+                float ringMod = sin(r * 45.0 - u_time * 2.0);
+
+                return smoothstep(-0.2, 0.2, stepLuma * ringMod);
+            }
+
+            // Mode 3: Scintillating Hermann-Spillmann Phantom Node Field
+            float mode3(vec2 uv, float offset) {
+                vec2 p = uv * 14.0 * rot(u_time * 0.1 + offset);
+                p += u_mouse * 2.5;
+                vec2 g = fract(p) - 0.5;
+                
+                // Intersecting orthogonal grid with masked vertices generating dark/white phantom flashes
+                float lines = step(abs(g.x), 0.08) + step(abs(g.y), 0.08);
+                float dots = smoothstep(0.18, 0.14, length(g));
+                
+                float pulse = sin(u_time * 8.0 + length(floor(p)) * 1.5);
+                return clamp(lines - dots * (1.2 + pulse * 0.5 + u_impulse), 0.0, 1.0);
+            }
+
+            // Mode 4: Pulfrich Chromatic Log-Polar Hyperspace Corridor
+            float mode4(vec2 uv, float offset) {
+                vec2 p = uv;
+                p += u_mouse * 0.35;
+                float r = length(p);
+                float a = atan(p.y, p.x);
+
+                vec2 logP = vec2(a / 3.14159, log(r + 0.0001) * 3.0 - u_time * (2.0 + u_impulse * 4.0));
+                logP *= rot(u_time * 0.15 + offset);
+
+                float lattice = sin(logP.x * 20.0) * cos(logP.y * 30.0);
+                return smoothstep(-0.28, 0.28, lattice);
+            }
+
+            float sampleParadox(vec2 uv, float offset) {
+                if (u_mode == 0) return mode0(uv, offset);
+                if (u_mode == 1) return mode1(uv, offset);
+                if (u_mode == 2) return mode2(uv, offset);
+                if (u_mode == 3) return mode3(uv, offset);
+                return mode4(uv, offset);
+            }
+
+            void main() {
+                vec2 uv = (gl_FragCoord.xy - 0.5 * u_resolution.xy) / min(u_resolution.x, u_resolution.y);
+
+                // Triple-band spectral chromatic aberration fringe displacement
+                float r = sampleParadox(uv * 1.022,  0.026);
+                float g = sampleParadox(uv * 1.000,  0.000);
+                float b = sampleParadox(uv * 0.978, -0.026);
+
+                vec3 col = vec3(r, g, b);
+
+                // Optical glow flare & high-contrast thresholding
+                col += vec3(0.08, 0.35, 1.0) * (1.0 - length(uv) * 0.75) * (1.0 + u_impulse * 1.6);
+                col += vec3(1.0) * pow(r * g * b, 3.4) * 1.8;
+
+                // ACES Filmic Curve
+                col = (col * (2.51 * col + 0.03)) / (col * (2.43 * col + 0.59) + 0.14);
+                col *= (1.0 - length(uv) * 0.35);
+
+                gl_FragColor = vec4(col, 1.0);
+            }
+        `;
+
+        function createShader(gl, type, source) {
+            const s = gl.createShader(type);
+            gl.shaderSource(s, source);
+            gl.compileShader(s);
+            return s;
+        }
+
+        const prog = gl.createProgram();
+        gl.attachShader(prog, createShader(gl, gl.VERTEX_SHADER, vs));
+        gl.attachShader(prog, createShader(gl, gl.FRAGMENT_SHADER, fs));
+        gl.linkProgram(prog);
+        gl.useProgram(prog);
+
+        const posLoc = gl.getAttribLocation(prog, 'position');
+        const buf = gl.createBuffer();
+        gl.bindBuffer(gl.ARRAY_BUFFER, buf);
+        gl.bufferData(gl.ARRAY_BUFFER, new Float32Array([-1,-1, 1,-1, -1,1, -1,1, 1,-1, 1,1]), gl.STATIC_DRAW);
+        gl.enableVertexAttribArray(posLoc);
+        gl.vertexAttribPointer(posLoc, 2, gl.FLOAT, false, 0, 0);
+
+        const uRes = gl.getUniformLocation(prog, 'u_resolution');
+        const uTime = gl.getUniformLocation(prog, 'u_time');
+        const uMouse = gl.getUniformLocation(prog, 'u_mouse');
+        const uImpulse = gl.getUniformLocation(prog, 'u_impulse');
+        const uMode = gl.getUniformLocation(prog, 'u_mode');
+
+        let currentMode = 0;
+        let targetMouse = { x: 0.0, y: 0.0 };
+        let currentMouse = { x: 0.0, y: 0.0 };
+        let impulse = 0.0;
+
+        function setMode(index) {
+            if (!audioCtx) initAudio();
+            currentMode = index;
+            impulse = 1.0;
+
+            if (audioCtx && audioCtx.state === 'running') {
+                const now = audioCtx.currentTime;
+                subDrone.frequency.setTargetAtTime(fundamentalBases[index] * 0.5, now, 0.04);
+                triggerKineticDetonation(1.0 + index * 0.25);
+            }
+
+            const buttons = document.querySelectorAll('.mode-btn');
+            buttons.forEach((btn, i) => btn.classList.toggle('active', i === index));
+        }
+
+        function nextMode() { setMode((currentMode + 1) % 5); }
+        function prevMode() { setMode((currentMode + 4) % 5); }
+
+        window.addEventListener('keydown', (e) => {
+            if (e.key >= '1' && e.key <= '5') setMode(parseInt(e.key) - 1);
+            if (e.key === 'ArrowRight' || e.key === ' ') nextMode();
+            if (e.key === 'ArrowLeft') prevMode();
+            if (e.key.toLowerCase() === 'm') toggleAudio();
+        });
+
+        let touchStartX = 0;
+        window.addEventListener('touchstart', e => {
+            if (!audioCtx) initAudio();
+            if (e.touches[0]) touchStartX = e.touches[0].clientX;
+        }, { passive: true });
+
+        window.addEventListener('touchend', e => {
+            if (e.changedTouches[0]) {
+                const diffX = e.changedTouches[0].clientX - touchStartX;
+                if (Math.abs(diffX) > 60) {
+                    if (diffX < 0) nextMode();
+                    else prevMode();
+                }
+            }
+        }, { passive: true });
+
+        function updateCoords(clientX, clientY) {
+            targetMouse.x = (clientX / window.innerWidth) * 2.0 - 1.0;
+            targetMouse.y = -(clientY / window.innerHeight) * 2.0 + 1.0;
+            updateAudioDynamics(targetMouse.x, targetMouse.y);
+        }
+
+        window.addEventListener('mousemove', e => updateCoords(e.clientX, e.clientY));
+        window.addEventListener('touchmove', e => {
+            if (e.touches.length > 0) updateCoords(e.touches[0].clientX, e.touches[0].clientY);
+        }, { passive: true });
+
+        window.addEventListener('pointerdown', (e) => {
+            if (!audioCtx) initAudio();
+            if (!e.target.closest('#dock')) {
+                impulse = 1.0;
+                triggerKineticDetonation(1.35);
+            }
+        });
+
+        function resize() {
+            const dpr = Math.min(window.devicePixelRatio || 1, 1.5);
+            canvas.width = Math.floor(window.innerWidth * dpr);
+            canvas.height = Math.floor(window.innerHeight * dpr);
+            gl.viewport(0, 0, canvas.width, canvas.height);
+        }
+        window.addEventListener('resize', resize);
+        resize();
+
+        let startTime = performance.now();
+
+        function render() {
+            const currentTime = (performance.now() - startTime) * 0.001;
+            
+            currentMouse.x += (targetMouse.x - currentMouse.x) * 0.08;
+            currentMouse.y += (targetMouse.y - currentMouse.y) * 0.08;
+            impulse *= 0.93;
+
+            gl.uniform2f(uRes, canvas.width, canvas.height);
+            gl.uniform1f(uTime, currentTime);
+            gl.uniform2f(uMouse, currentMouse.x, currentMouse.y);
+            gl.uniform1f(uImpulse, impulse);
+            gl.uniform1i(uMode, currentMode);
+
+            gl.drawArrays(gl.TRIANGLES, 0, 6);
+            requestAnimationFrame(render);
+        }
+
+        render();
+    </script>
+</body>
+</html>
