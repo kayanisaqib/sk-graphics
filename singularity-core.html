@@ -1,0 +1,537 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <title>SINGULARITY // 4D Quantum Matrix</title>
+    <style>
+        * { margin: 0; padding: 0; box-sizing: border-box; }
+        html, body {
+            width: 100%;
+            height: 100%;
+            overflow: hidden;
+            background-color: #000000;
+            touch-action: none;
+            user-select: none;
+            -webkit-user-select: none;
+            cursor: crosshair;
+            font-family: monospace;
+        }
+
+        canvas {
+            width: 100%;
+            height: 100%;
+            display: block;
+            position: absolute;
+            top: 0;
+            left: 0;
+            z-index: 1;
+        }
+
+        /* Minimalist Floating Glass Dock */
+        .controls-dock {
+            position: fixed;
+            bottom: 24px;
+            left: 50%;
+            transform: translateX(-50%);
+            z-index: 10;
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            background: rgba(4, 4, 8, 0.82);
+            border: 1px solid rgba(255, 255, 255, 0.18);
+            padding: 6px 14px;
+            border-radius: 100px;
+            backdrop-filter: blur(20px);
+            -webkit-backdrop-filter: blur(20px);
+            opacity: 0.55;
+            transition: opacity 0.3s cubic-bezier(0.16, 1, 0.3, 1);
+        }
+
+        .controls-dock:hover, .controls-dock:active {
+            opacity: 1;
+        }
+
+        .mode-btn {
+            background: transparent;
+            border: 1px solid rgba(255, 255, 255, 0.22);
+            color: #9999aa;
+            font-family: inherit;
+            font-size: 0.72rem;
+            font-weight: 700;
+            padding: 6px 12px;
+            border-radius: 100px;
+            cursor: pointer;
+            transition: all 0.2s ease;
+        }
+
+        .mode-btn.active {
+            background: #ffffff;
+            color: #000000;
+            border-color: #ffffff;
+            box-shadow: 0 0 16px rgba(255, 255, 255, 0.9);
+        }
+
+        .audio-btn {
+            background: rgba(255, 255, 255, 0.08);
+            border: 1px solid rgba(255, 255, 255, 0.3);
+            color: #00ffaa;
+            font-family: inherit;
+            font-size: 0.72rem;
+            font-weight: 700;
+            padding: 6px 12px;
+            border-radius: 100px;
+            cursor: pointer;
+            transition: all 0.2s ease;
+        }
+        .audio-btn.muted {
+            color: #ff3366;
+            border-color: rgba(255, 51, 102, 0.4);
+        }
+
+        .nav-arrow {
+            background: transparent;
+            border: none;
+            color: #ffffff;
+            font-size: 0.95rem;
+            cursor: pointer;
+            padding: 0 4px;
+        }
+    </style>
+</head>
+<body>
+
+    <canvas id="glcanvas"></canvas>
+
+    <div class="controls-dock" id="dock">
+        <button class="audio-btn" id="audio-toggle" onclick="toggleAudio()">🔊 AUDIO ON</button>
+        <button class="nav-arrow" onclick="prevMode()">‹</button>
+        <button class="mode-btn active" onclick="setMode(0)">01</button>
+        <button class="mode-btn" onclick="setMode(1)">02</button>
+        <button class="mode-btn" onclick="setMode(2)">03</button>
+        <button class="mode-btn" onclick="setMode(3)">04</button>
+        <button class="mode-btn" onclick="setMode(4)">05</button>
+        <button class="nav-arrow" onclick="nextMode()">›</button>
+    </div>
+
+    <script>
+        // ==========================================
+        // 1. DUAL-ENGINE SPATIAL AUDIO SYNTHESIZER
+        // ==========================================
+        let audioCtx = null;
+        let isAudioActive = false;
+        let carrierOsc, modOsc, modGain, subOsc, masterGain, filterNode;
+        const rootTones = [43.65, 51.91, 58.27, 65.41, 73.42]; // Sub-bass fundamental chords (F0, G#0, A#0, C1, D1)
+
+        function initAudio() {
+            if (audioCtx) return;
+            const AudioContext = window.AudioContext || window.webkitAudioContext;
+            audioCtx = new AudioContext();
+
+            masterGain = audioCtx.createGain();
+            masterGain.gain.setValueAtTime(0.15, audioCtx.currentTime);
+
+            filterNode = audioCtx.createBiquadFilter();
+            filterNode.type = 'lowpass';
+            filterNode.frequency.setValueAtTime(450, audioCtx.currentTime);
+            filterNode.Q.setValueAtTime(6.0, audioCtx.currentTime);
+
+            // Frequency Modulation (FM) Pair
+            carrierOsc = audioCtx.createOscillator();
+            carrierOsc.type = 'sawtooth';
+            carrierOsc.frequency.setValueAtTime(rootTones[0] * 2.0, audioCtx.currentTime);
+
+            modOsc = audioCtx.createOscillator();
+            modOsc.type = 'sine';
+            modOsc.frequency.setValueAtTime(rootTones[0] * 3.5, audioCtx.currentTime);
+
+            modGain = audioCtx.createGain();
+            modGain.gain.setValueAtTime(120, audioCtx.currentTime);
+            modOsc.connect(modGain);
+            modGain.connect(carrierOsc.frequency);
+
+            // Sub-harmonic infrasound drone
+            subOsc = audioCtx.createOscillator();
+            subOsc.type = 'sine';
+            subOsc.frequency.setValueAtTime(rootTones[0], audioCtx.currentTime);
+
+            carrierOsc.connect(filterNode);
+            subOsc.connect(masterGain);
+            filterNode.connect(masterGain);
+            masterGain.connect(audioCtx.destination);
+
+            carrierOsc.start();
+            modOsc.start();
+            subOsc.start();
+            isAudioActive = true;
+        }
+
+        function toggleAudio() {
+            const btn = document.getElementById('audio-toggle');
+            if (!audioCtx) {
+                initAudio();
+                btn.innerText = '🔊 AUDIO ON';
+                btn.classList.remove('muted');
+                return;
+            }
+            if (audioCtx.state === 'suspended') {
+                audioCtx.resume();
+                isAudioActive = true;
+                btn.innerText = '🔊 AUDIO ON';
+                btn.classList.remove('muted');
+            } else if (audioCtx.state === 'running') {
+                audioCtx.suspend();
+                isAudioActive = false;
+                btn.innerText = '🔇 MUTED';
+                btn.classList.add('muted');
+            }
+        }
+
+        function triggerAudioShock(power = 1.0) {
+            if (!audioCtx || audioCtx.state !== 'running') return;
+            const now = audioCtx.currentTime;
+
+            filterNode.frequency.cancelScheduledValues(now);
+            filterNode.frequency.setValueAtTime(3200 * power, now);
+            filterNode.frequency.exponentialRampToValueAtTime(320, now + 0.75);
+
+            const blast = audioCtx.createOscillator();
+            const blastGain = audioCtx.createGain();
+            blast.type = 'triangle';
+            blast.frequency.setValueAtTime(180 * power, now);
+            blast.frequency.exponentialRampToValueAtTime(24, now + 0.45);
+
+            blastGain.gain.setValueAtTime(0.55, now);
+            blastGain.gain.exponentialRampToValueAtTime(0.001, now + 0.45);
+
+            blast.connect(blastGain);
+            blastGain.connect(audioCtx.destination);
+            blast.start(now);
+            blast.stop(now + 0.46);
+        }
+
+        function updateAudioDynamics(x, y) {
+            if (!audioCtx || audioCtx.state !== 'running') return;
+            const now = audioCtx.currentTime;
+            const cutoff = 250 + (y + 1.0) * 1600;
+            const fmDepth = 40 + Math.abs(x) * 450;
+            filterNode.frequency.setTargetAtTime(cutoff, now, 0.04);
+            modGain.gain.setTargetAtTime(fmDepth, now, 0.04);
+        }
+
+        // ==========================================
+        // 2. 4D RELATIVISTIC GLSL KERNEL
+        // ==========================================
+        const canvas = document.getElementById('glcanvas');
+        const gl = canvas.getContext('webgl', { powerPreference: "high-performance", alpha: false, antialias: false });
+
+        const vs = `attribute vec2 position; void main() { gl_Position = vec4(position, 0.0, 1.0); }`;
+
+        const fs = `
+            precision highp float;
+            uniform vec2 u_resolution;
+            uniform vec2 u_mouse;
+            uniform float u_time;
+            uniform float u_impulse;
+            uniform int u_mode;
+
+            mat2 rot(float a) { float s = sin(a), c = cos(a); return mat2(c, -s, s, c); }
+
+            vec3 pal(float t, vec3 a, vec3 b, vec3 c, vec3 d) {
+                return a + b * cos(6.28318 * (c * t + d));
+            }
+
+            // Mode 0: Relativistic Kerr Singularity & Lensing Accretion Field
+            vec4 renderKerr(vec3 ro, vec3 rd) {
+                vec3 p = ro;
+                float minR = 100.0;
+                float accretion = 0.0;
+
+                for (int i = 0; i < 54; i++) {
+                    float r = length(p);
+                    minR = min(minR, r);
+                    if (r < 0.65) break;
+
+                    float h = abs(p.y);
+                    if (h < 0.22 && r > 0.85 && r < 3.2) {
+                        vec3 q = p;
+                        q.xz *= rot(u_time * 2.2 + r * 2.8);
+                        float dens = (1.0 - h / 0.22) * smoothstep(3.2, 1.1, r);
+                        dens *= (0.6 + 0.4 * sin(atan(q.z, q.x) * 6.0 + r * 9.0 - u_time * 3.5));
+                        accretion += dens * (0.05 + u_impulse * 0.04);
+                    }
+
+                    // Gravitational Lensing Vector Curvature
+                    vec3 gravity = -normalize(p) / (r * r * 1.8 + 0.08);
+                    rd += gravity * 0.06;
+                    rd = normalize(rd);
+                    p += rd * 0.08;
+                }
+
+                vec3 col = vec3(0.0);
+                if (minR >= 0.65) {
+                    float stars = pow(fract(sin(dot(rd.xy, vec2(12.9898, 78.233))) * 43758.5453), 28.0);
+                    col = vec3(stars * 0.4);
+                }
+
+                // Doppler shift color mapping
+                vec3 disk = mix(vec3(0.1, 0.45, 1.0), vec3(1.0, 0.9, 0.7), accretion * 1.8);
+                col += disk * accretion * 2.8;
+
+                float photonRing = 0.016 / (abs(minR - 0.72) + 0.018);
+                col += vec3(0.7, 0.85, 1.0) * photonRing * 0.35;
+                return vec4(col, 1.0);
+            }
+
+            // Mode 1: 4D Hyper-Tesseract Slicing Manifold
+            float sdHyperTesseract(vec3 p) {
+                vec3 q = p;
+                q.xz *= rot(u_time * 0.35 + u_mouse.x * 2.2);
+                q.yz *= rot(u_time * 0.25 + u_mouse.y * 1.8);
+                
+                // 4D 4th-axis hyper-rotation projection
+                float w = sin(u_time * 1.2) * 0.6;
+                vec3 d = abs(q) - vec3(1.1 + w * 0.25);
+                float outerBox = length(max(d, 0.0)) + min(max(d.x, max(d.y, d.z)), 0.0);
+                
+                vec3 qCore = abs(q) - vec3(0.65 - w * 0.2);
+                float innerBox = length(max(qCore, 0.0)) + min(max(qCore.x, max(qCore.y, qCore.z)), 0.0);
+                
+                return max(-innerBox, outerBox) - 0.04;
+            }
+
+            // Mode 2: Non-Euclidean Klein Bottle Core
+            float sdKlein(vec3 p) {
+                vec3 q = p;
+                q.xz *= rot(u_time * 0.4 + u_mouse.x * 2.0);
+                q.xy *= rot(u_time * 0.3 + u_mouse.y * 2.0);
+                
+                float r = length(q.xz) - 1.2;
+                float knot = length(vec2(r, q.y)) - (0.42 + u_impulse * 0.2);
+                knot += sin(q.x * 7.0 + u_time * 2.0) * cos(q.y * 7.0) * 0.04;
+                return knot;
+            }
+
+            // Mode 3: 4D Quantum Gyroid Foam
+            float sdQuantumFoam(vec3 p) {
+                vec3 q = p;
+                q.xz *= rot(u_time * 0.2 + u_mouse.x * 1.5);
+                q.yz *= rot(u_time * 0.15 + u_mouse.y * 1.5);
+                
+                float sp = length(p) - (1.6 + u_impulse * 0.4);
+                vec3 gP = q * 3.8;
+                float gyroid = abs(dot(sin(gP), cos(gP.zxy)) - 0.2) / 3.8 - 0.04;
+                return max(sp, gyroid);
+            }
+
+            // Mode 4: Chromatic Hyper-Prism Crystal
+            float sdHyperPrism(vec3 p) {
+                vec3 q = p;
+                q.xz *= rot(u_time * 0.3 + u_mouse.x * 2.5);
+                q.yz *= rot(u_time * 0.2 + u_mouse.y * 2.5);
+                
+                vec3 pa = abs(q);
+                float oct = (pa.x + pa.y + pa.z) - (1.75 + u_impulse * 0.3);
+                float cube = max(pa.x, max(pa.y, pa.z)) - 1.15;
+                return max(oct, cube);
+            }
+
+            float mapScene(vec3 p) {
+                if (u_mode == 1) return sdHyperTesseract(p);
+                if (u_mode == 2) return sdKlein(p);
+                if (u_mode == 3) return sdQuantumFoam(p);
+                return sdHyperPrism(p);
+            }
+
+            vec3 calcNormal(vec3 p) {
+                vec2 e = vec2(0.002, 0.0);
+                return normalize(vec3(
+                    mapScene(p + e.xyy) - mapScene(p - e.xyy),
+                    mapScene(p + e.yxy) - mapScene(p - e.yxy),
+                    mapScene(p + e.yyx) - mapScene(p - e.yyx)
+                ));
+            }
+
+            void main() {
+                vec2 uv = (gl_FragCoord.xy - 0.5 * u_resolution.xy) / min(u_resolution.x, u_resolution.y);
+
+                vec3 ro = vec3(0.0, 0.0, 3.8);
+                vec3 rd = normalize(vec3(uv, -1.35));
+
+                if (u_mode == 0) {
+                    vec4 kerrCol = renderKerr(vec3(0.0, 1.2, -3.2), normalize(vec3(uv.x, uv.y - 0.3, 1.25)));
+                    gl_FragColor = vec4(kerrCol.rgb * (1.0 - length(uv) * 0.35), 1.0);
+                    return;
+                }
+
+                float t = 0.0, d = 0.0, glow = 0.0;
+                bool hit = false;
+                vec3 p;
+
+                for (int i = 0; i < 56; i++) {
+                    p = ro + rd * t;
+                    d = mapScene(p);
+                    glow += 0.012 / (abs(d) + 0.032);
+                    if (abs(d) < 0.0018) { hit = true; break; }
+                    if (t > 7.5) break;
+                    t += d * 0.75;
+                }
+
+                vec3 col = vec3(0.008, 0.01, 0.018);
+
+                if (hit) {
+                    vec3 n = calcNormal(p);
+                    vec3 l = normalize(vec3(2.0, 3.0, 2.5));
+                    vec3 v = -rd;
+
+                    float diff = max(dot(n, l), 0.0);
+                    vec3 h = normalize(l + v);
+                    float spec = pow(max(dot(n, h), 0.0), 48.0);
+                    float fresnel = pow(1.0 - max(dot(v, n), 0.0), 3.2);
+
+                    vec3 irid = pal(dot(n, v) * 0.6 + u_time * 0.15,
+                        vec3(0.5, 0.5, 0.5), vec3(0.5, 0.5, 0.5), vec3(1.0, 1.0, 1.0), vec3(0.0, 0.33, 0.67));
+
+                    vec3 base = mix(vec3(0.04, 0.06, 0.1), vec3(0.9, 0.95, 1.0), fresnel);
+                    col = base * (diff * 0.5 + 0.5) + irid * fresnel * 0.8 + vec3(1.0) * spec * 1.3;
+                }
+
+                // Synesthetic Volumetric Glow
+                vec3 spectralAura = pal(float(u_mode) * 0.2 + u_time * 0.05,
+                    vec3(0.5, 0.5, 0.5), vec3(0.5, 0.5, 0.5), vec3(1.0, 1.0, 1.0), vec3(0.1, 0.4, 0.8));
+
+                col += spectralAura * glow * (0.16 + u_impulse * 0.25);
+                col += vec3(0.95, 0.98, 1.0) * pow(glow * 0.035, 2.2);
+
+                // ACES Filmic Tonemap Curve
+                col = (col * (2.51 * col + 0.03)) / (col * (2.43 * col + 0.59) + 0.14);
+                col *= (1.0 - length(uv) * 0.38);
+
+                gl_FragColor = vec4(col, 1.0);
+            }
+        `;
+
+        function createShader(gl, type, source) {
+            const s = gl.createShader(type);
+            gl.shaderSource(s, source);
+            gl.compileShader(s);
+            return s;
+        }
+
+        const prog = gl.createProgram();
+        gl.attachShader(prog, createShader(gl, gl.VERTEX_SHADER, vs));
+        gl.attachShader(prog, createShader(gl, gl.FRAGMENT_SHADER, fs));
+        gl.linkProgram(prog);
+        gl.useProgram(prog);
+
+        const posLoc = gl.getAttribLocation(prog, 'position');
+        const buf = gl.createBuffer();
+        gl.bindBuffer(gl.ARRAY_BUFFER, buf);
+        gl.bufferData(gl.ARRAY_BUFFER, new Float32Array([-1,-1, 1,-1, -1,1, -1,1, 1,-1, 1,1]), gl.STATIC_DRAW);
+        gl.enableVertexAttribArray(posLoc);
+        gl.vertexAttribPointer(posLoc, 2, gl.FLOAT, false, 0, 0);
+
+        const uRes = gl.getUniformLocation(prog, 'u_resolution');
+        const uTime = gl.getUniformLocation(prog, 'u_time');
+        const uMouse = gl.getUniformLocation(prog, 'u_mouse');
+        const uImpulse = gl.getUniformLocation(prog, 'u_impulse');
+        const uMode = gl.getUniformLocation(prog, 'u_mode');
+
+        let currentMode = 0;
+        let targetMouse = { x: 0.0, y: 0.0 };
+        let currentMouse = { x: 0.0, y: 0.0 };
+        let impulse = 0.0;
+
+        function setMode(index) {
+            if (!audioCtx) initAudio();
+            currentMode = index;
+            impulse = 1.0;
+
+            if (audioCtx && audioCtx.state === 'running') {
+                const now = audioCtx.currentTime;
+                carrierOsc.frequency.setTargetAtTime(rootTones[index] * 2.0, now, 0.04);
+                subOsc.frequency.setTargetAtTime(rootTones[index], now, 0.04);
+                triggerAudioShock(1.0 + index * 0.25);
+            }
+
+            const buttons = document.querySelectorAll('.mode-btn');
+            buttons.forEach((btn, i) => btn.classList.toggle('active', i === index));
+        }
+
+        function nextMode() { setMode((currentMode + 1) % 5); }
+        function prevMode() { setMode((currentMode + 4) % 5); }
+
+        window.addEventListener('keydown', (e) => {
+            if (e.key >= '1' && e.key <= '5') setMode(parseInt(e.key) - 1);
+            if (e.key === 'ArrowRight' || e.key === ' ') nextMode();
+            if (e.key === 'ArrowLeft') prevMode();
+            if (e.key.toLowerCase() === 'm') toggleAudio();
+        });
+
+        let touchStartX = 0;
+        window.addEventListener('touchstart', e => {
+            if (!audioCtx) initAudio();
+            if (e.touches[0]) touchStartX = e.touches[0].clientX;
+        }, { passive: true });
+
+        window.addEventListener('touchend', e => {
+            if (e.changedTouches[0]) {
+                const diffX = e.changedTouches[0].clientX - touchStartX;
+                if (Math.abs(diffX) > 60) {
+                    if (diffX < 0) nextMode();
+                    else prevMode();
+                }
+            }
+        }, { passive: true });
+
+        function updateCoords(clientX, clientY) {
+            targetMouse.x = (clientX / window.innerWidth) * 2.0 - 1.0;
+            targetMouse.y = -(clientY / window.innerHeight) * 2.0 + 1.0;
+            updateAudioDynamics(targetMouse.x, targetMouse.y);
+        }
+
+        window.addEventListener('mousemove', e => updateCoords(e.clientX, e.clientY));
+        window.addEventListener('touchmove', e => {
+            if (e.touches.length > 0) updateCoords(e.touches[0].clientX, e.touches[0].clientY);
+        }, { passive: true });
+
+        window.addEventListener('pointerdown', (e) => {
+            if (!audioCtx) initAudio();
+            if (!e.target.closest('#dock')) {
+                impulse = 1.0;
+                triggerAudioShock(1.3);
+            }
+        });
+
+        function resize() {
+            const dpr = Math.min(window.devicePixelRatio || 1, 1.5);
+            canvas.width = Math.floor(window.innerWidth * dpr);
+            canvas.height = Math.floor(window.innerHeight * dpr);
+            gl.viewport(0, 0, canvas.width, canvas.height);
+        }
+        window.addEventListener('resize', resize);
+        resize();
+
+        let startTime = performance.now();
+
+        function render() {
+            const currentTime = (performance.now() - startTime) * 0.001;
+            
+            currentMouse.x += (targetMouse.x - currentMouse.x) * 0.08;
+            currentMouse.y += (targetMouse.y - currentMouse.y) * 0.08;
+            impulse *= 0.93;
+
+            gl.uniform2f(uRes, canvas.width, canvas.height);
+            gl.uniform1f(uTime, currentTime);
+            gl.uniform2f(uMouse, currentMouse.x, currentMouse.y);
+            gl.uniform1f(uImpulse, impulse);
+            gl.uniform1i(uMode, currentMode);
+
+            gl.drawArrays(gl.TRIANGLES, 0, 6);
+            requestAnimationFrame(render);
+        }
+
+        render();
+    </script>
+</body>
+</html>
