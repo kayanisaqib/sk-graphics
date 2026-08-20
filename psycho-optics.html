@@ -1,0 +1,446 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <title>PSYCHO-OPTICS // Synesthetic Illusion Matrix</title>
+    <style>
+        * { margin: 0; padding: 0; box-sizing: border-box; }
+        html, body {
+            width: 100%;
+            height: 100%;
+            overflow: hidden;
+            background-color: #000000;
+            touch-action: none;
+            user-select: none;
+            -webkit-user-select: none;
+            cursor: crosshair;
+            font-family: monospace;
+        }
+
+        canvas {
+            width: 100%;
+            height: 100%;
+            display: block;
+            position: absolute;
+            top: 0;
+            left: 0;
+            z-index: 1;
+        }
+
+        /* Minimalist Glass Control Dock */
+        .controls-dock {
+            position: fixed;
+            bottom: 24px;
+            left: 50%;
+            transform: translateX(-50%);
+            z-index: 10;
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            background: rgba(0, 0, 0, 0.75);
+            border: 1px solid rgba(255, 255, 255, 0.2);
+            padding: 6px 14px;
+            border-radius: 100px;
+            backdrop-filter: blur(16px);
+            -webkit-backdrop-filter: blur(16px);
+            opacity: 0.5;
+            transition: opacity 0.3s ease;
+        }
+
+        .controls-dock:hover, .controls-dock:active {
+            opacity: 1;
+        }
+
+        .mode-btn {
+            background: transparent;
+            border: 1px solid rgba(255, 255, 255, 0.25);
+            color: #aaaaaa;
+            font-family: inherit;
+            font-size: 0.72rem;
+            font-weight: 700;
+            padding: 6px 12px;
+            border-radius: 100px;
+            cursor: pointer;
+            transition: all 0.2s ease;
+        }
+
+        .mode-btn.active {
+            background: #ffffff;
+            color: #000000;
+            border-color: #ffffff;
+            box-shadow: 0 0 14px rgba(255, 255, 255, 0.8);
+        }
+
+        .audio-btn {
+            background: rgba(255, 255, 255, 0.1);
+            border: 1px solid rgba(255, 255, 255, 0.3);
+            color: #00ff88;
+            font-family: inherit;
+            font-size: 0.72rem;
+            font-weight: 700;
+            padding: 6px 12px;
+            border-radius: 100px;
+            cursor: pointer;
+            transition: all 0.2s ease;
+        }
+        .audio-btn.muted {
+            color: #ff3366;
+            border-color: rgba(255, 51, 102, 0.4);
+        }
+
+        .nav-arrow {
+            background: transparent;
+            border: none;
+            color: #ffffff;
+            font-size: 0.95rem;
+            cursor: pointer;
+            padding: 0 4px;
+        }
+    </style>
+</head>
+<body>
+
+    <canvas id="glcanvas"></canvas>
+
+    <div class="controls-dock" id="dock">
+        <button class="audio-btn" id="audio-toggle" onclick="toggleAudio()">🔊 AUDIO ON</button>
+        <button class="nav-arrow" onclick="prevMode()">‹</button>
+        <button class="mode-btn active" onclick="setMode(0)">01</button>
+        <button class="mode-btn" onclick="setMode(1)">02</button>
+        <button class="mode-btn" onclick="setMode(2)">03</button>
+        <button class="mode-btn" onclick="setMode(3)">04</button>
+        <button class="mode-btn" onclick="setMode(4)">05</button>
+        <button class="nav-arrow" onclick="nextMode()">›</button>
+    </div>
+
+    <script>
+        // ==========================================
+        // 1. PROCEDURAL SYNTHESIS AUDIO ENGINE
+        // ==========================================
+        let audioCtx = null;
+        let isAudioActive = false;
+        let osc1, osc2, subOsc, masterGain, filter;
+        let baseFreqs = [55, 65.4, 73.4, 82.4, 110]; // Musical root drones (A1, C2, D2, E2, A2)
+
+        function initAudio() {
+            if (audioCtx) return;
+            const AudioContext = window.AudioContext || window.webkitAudioContext;
+            audioCtx = new AudioContext();
+
+            masterGain = audioCtx.createGain();
+            masterGain.gain.setValueAtTime(0.12, audioCtx.currentTime);
+
+            filter = audioCtx.createBiquadFilter();
+            filter.type = 'lowpass';
+            filter.frequency.setValueAtTime(450, audioCtx.currentTime);
+            filter.Q.setValueAtTime(4.5, audioCtx.currentTime);
+
+            // Primary harmonic oscillator
+            osc1 = audioCtx.createOscillator();
+            osc1.type = 'sawtooth';
+            osc1.frequency.setValueAtTime(baseFreqs[0], audioCtx.currentTime);
+
+            // Detuned chorus oscillator
+            osc2 = audioCtx.createOscillator();
+            osc2.type = 'sine';
+            osc2.frequency.setValueAtTime(baseFreqs[0] * 1.505, audioCtx.currentTime);
+
+            // Deep sub-bass drone
+            subOsc = audioCtx.createOscillator();
+            subOsc.type = 'triangle';
+            subOsc.frequency.setValueAtTime(baseFreqs[0] * 0.5, audioCtx.currentTime);
+
+            osc1.connect(filter);
+            osc2.connect(filter);
+            subOsc.connect(masterGain);
+            filter.connect(masterGain);
+            masterGain.connect(audioCtx.destination);
+
+            osc1.start();
+            osc2.start();
+            subOsc.start();
+            isAudioActive = true;
+        }
+
+        function toggleAudio() {
+            const btn = document.getElementById('audio-toggle');
+            if (!audioCtx) {
+                initAudio();
+                btn.innerText = '🔊 AUDIO ON';
+                btn.classList.remove('muted');
+                return;
+            }
+
+            if (audioCtx.state === 'suspended') {
+                audioCtx.resume();
+                isAudioActive = true;
+                btn.innerText = '🔊 AUDIO ON';
+                btn.classList.remove('muted');
+            } else if (audioCtx.state === 'running') {
+                audioCtx.suspend();
+                isAudioActive = false;
+                btn.innerText = '🔇 MUTED';
+                btn.classList.add('muted');
+            }
+        }
+
+        function triggerAudioShock(pitchMod = 1.0) {
+            if (!audioCtx || audioCtx.state !== 'running') return;
+            
+            const now = audioCtx.currentTime;
+            // High-intensity resonant filter sweep
+            filter.frequency.cancelScheduledValues(now);
+            filter.frequency.setValueAtTime(2800 * pitchMod, now);
+            filter.frequency.exponentialRampToValueAtTime(350, now + 0.65);
+
+            // Tactile Sub-bass drop
+            const clickOsc = audioCtx.createOscillator();
+            const clickGain = audioCtx.createGain();
+            clickOsc.type = 'sine';
+            clickOsc.frequency.setValueAtTime(140 * pitchMod, now);
+            clickOsc.frequency.exponentialRampToValueAtTime(30, now + 0.35);
+
+            clickGain.gain.setValueAtTime(0.45, now);
+            clickGain.gain.exponentialRampToValueAtTime(0.001, now + 0.35);
+
+            clickOsc.connect(clickGain);
+            clickGain.connect(audioCtx.destination);
+            clickOsc.start(now);
+            clickOsc.stop(now + 0.36);
+        }
+
+        function updateAudioKinematics(x, y) {
+            if (!audioCtx || audioCtx.state !== 'running') return;
+            const now = audioCtx.currentTime;
+            const cutoff = 300 + (y + 1.0) * 1200;
+            const resonance = 2.0 + (Math.abs(x) * 8.0);
+            filter.frequency.setTargetAtTime(cutoff, now, 0.05);
+            filter.Q.setTargetAtTime(resonance, now, 0.05);
+        }
+
+        // ==========================================
+        // 2. HIGH-INTENSITY GLSL OPTICAL SHADER
+        // ==========================================
+        const canvas = document.getElementById('glcanvas');
+        const gl = canvas.getContext('webgl', { powerPreference: "high-performance", alpha: false, antialias: false });
+
+        const vs = `attribute vec2 position; void main() { gl_Position = vec4(position, 0.0, 1.0); }`;
+
+        const fs = `
+            precision highp float;
+            uniform vec2 u_resolution;
+            uniform vec2 u_mouse;
+            uniform float u_time;
+            uniform float u_impulse;
+            uniform int u_mode;
+
+            mat2 rot(float a) {
+                float s = sin(a), c = cos(a);
+                return mat2(c, -s, s, c);
+            }
+
+            // Mode 0: Stroboscopic Tunnel Collapse
+            float mode0(vec2 uv, float offset) {
+                vec2 p = uv * rot(u_time * 0.25 + offset);
+                float r = length(p);
+                float a = atan(p.y, p.x);
+                float rings = sin(log(r + 0.001) * (36.0 + u_impulse * 20.0) - u_time * 4.5);
+                float spokes = sin(a * 24.0 + sin(r * 12.0 - u_time * 3.0));
+                return smoothstep(-0.25, 0.25, rings * spokes);
+            }
+
+            // Mode 1: Logarithmic Hypnotic Spiral Singularity
+            float mode1(vec2 uv, float offset) {
+                vec2 p = uv * rot(u_time * 0.35 + offset);
+                float r = length(p);
+                float a = atan(p.y, p.x);
+                float spiral = sin(a * 12.0 - log(r + 0.0001) * (28.0 + u_impulse * 15.0) + u_time * 5.0);
+                float counter = cos(r * 40.0 - u_time * 3.0);
+                return smoothstep(-0.28, 0.28, spiral * counter);
+            }
+
+            // Mode 2: Psychotronic Cross-Interference Field
+            float mode2(vec2 uv, float offset) {
+                vec2 p1 = uv * rot(u_time * 0.2 + offset);
+                vec2 p2 = (uv - u_mouse * 0.4) * rot(-u_time * 0.3 - offset);
+                float g1 = sin(p1.x * (85.0 + u_impulse * 35.0) + u_time * 3.5);
+                float g2 = cos(p2.y * (85.0 + u_impulse * 35.0) - u_time * 3.5);
+                float g3 = sin((p1.x + p2.y) * 40.0);
+                return smoothstep(-0.22, 0.22, g1 * g2 + g3 * 0.35);
+            }
+
+            // Mode 3: Hyper-Velocity Vortex Singularity
+            float mode3(vec2 uv, float offset) {
+                vec2 p = uv;
+                float r = length(p);
+                p *= rot(1.0 / (r * 1.8 + 0.15) - u_time * (1.8 + u_impulse * 3.0) + offset);
+                float grating = sin(p.x * 60.0) * cos(p.y * 60.0);
+                return smoothstep(-0.25, 0.25, grating);
+            }
+
+            // Mode 4: Scintillating Hexagonal Quantum Lattice
+            float mode4(vec2 uv, float offset) {
+                vec2 p = uv * rot(u_time * 0.15 + offset) + u_mouse * 0.25;
+                float g1 = sin(dot(p, vec2(1.0, 0.0)) * (90.0 + u_impulse * 40.0) + u_time * 2.5);
+                float g2 = sin(dot(p, vec2(0.5, 0.866)) * (90.0 + u_impulse * 40.0) - u_time * 2.5);
+                float g3 = sin(dot(p, vec2(-0.5, 0.866)) * (90.0 + u_impulse * 40.0) + u_time * 2.0);
+                return smoothstep(-0.2, 0.2, g1 * g2 * g3 * 2.8);
+            }
+
+            float samplePattern(vec2 uv, float offset) {
+                if (u_mode == 0) return mode0(uv, offset);
+                if (u_mode == 1) return mode1(uv, offset);
+                if (u_mode == 2) return mode2(uv, offset);
+                if (u_mode == 3) return mode3(uv, offset);
+                return mode4(uv, offset);
+            }
+
+            void main() {
+                vec2 uv = (gl_FragCoord.xy - 0.5 * u_resolution.xy) / min(u_resolution.x, u_resolution.y);
+
+                // Triple-band high-chroma spectral dispersion
+                float r = samplePattern(uv * 1.02,  0.025);
+                float g = samplePattern(uv * 1.00,  0.000);
+                float b = samplePattern(uv * 0.98, -0.025);
+
+                vec3 col = vec3(r, g, b);
+
+                // Optical glow flare & high-contrast thresholding
+                col += vec3(0.12, 0.35, 1.0) * (1.0 - length(uv) * 0.8) * (1.0 + u_impulse * 1.6);
+                col += vec3(1.0) * pow(r * g * b, 3.5) * 1.8;
+
+                // Filmic curve
+                col = (col * (2.51 * col + 0.03)) / (col * (2.43 * col + 0.59) + 0.14);
+                col *= (1.0 - length(uv) * 0.35);
+
+                gl_FragColor = vec4(col, 1.0);
+            }
+        `;
+
+        function createShader(gl, type, source) {
+            const s = gl.createShader(type);
+            gl.shaderSource(s, source);
+            gl.compileShader(s);
+            return s;
+        }
+
+        const prog = gl.createProgram();
+        gl.attachShader(prog, createShader(gl, gl.VERTEX_SHADER, vs));
+        gl.attachShader(prog, createShader(gl, gl.FRAGMENT_SHADER, fs));
+        gl.linkProgram(prog);
+        gl.useProgram(prog);
+
+        const posLoc = gl.getAttribLocation(prog, 'position');
+        const buf = gl.createBuffer();
+        gl.bindBuffer(gl.ARRAY_BUFFER, buf);
+        gl.bufferData(gl.ARRAY_BUFFER, new Float32Array([-1,-1, 1,-1, -1,1, -1,1, 1,-1, 1,1]), gl.STATIC_DRAW);
+        gl.enableVertexAttribArray(posLoc);
+        gl.vertexAttribPointer(posLoc, 2, gl.FLOAT, false, 0, 0);
+
+        const uRes = gl.getUniformLocation(prog, 'u_resolution');
+        const uTime = gl.getUniformLocation(prog, 'u_time');
+        const uMouse = gl.getUniformLocation(prog, 'u_mouse');
+        const uImpulse = gl.getUniformLocation(prog, 'u_impulse');
+        const uMode = gl.getUniformLocation(prog, 'u_mode');
+
+        let currentMode = 0;
+        let targetMouse = { x: 0.0, y: 0.0 };
+        let currentMouse = { x: 0.0, y: 0.0 };
+        let impulse = 0.0;
+
+        function setMode(index) {
+            if (!audioCtx) initAudio();
+            currentMode = index;
+            impulse = 1.0;
+
+            if (audioCtx && audioCtx.state === 'running') {
+                const now = audioCtx.currentTime;
+                osc1.frequency.setTargetAtTime(baseFreqs[index], now, 0.04);
+                osc2.frequency.setTargetAtTime(baseFreqs[index] * 1.505, now, 0.04);
+                subOsc.frequency.setTargetAtTime(baseFreqs[index] * 0.5, now, 0.04);
+                triggerAudioShock(1.0 + index * 0.2);
+            }
+
+            const buttons = document.querySelectorAll('.mode-btn');
+            buttons.forEach((btn, i) => btn.classList.toggle('active', i === index));
+        }
+
+        function nextMode() { setMode((currentMode + 1) % 5); }
+        function prevMode() { setMode((currentMode + 4) % 5); }
+
+        window.addEventListener('keydown', (e) => {
+            if (e.key >= '1' && e.key <= '5') setMode(parseInt(e.key) - 1);
+            if (e.key === 'ArrowRight' || e.key === ' ') nextMode();
+            if (e.key === 'ArrowLeft') prevMode();
+            if (e.key.toLowerCase() === 'm') toggleAudio();
+        });
+
+        // Touch gestures
+        let touchStartX = 0;
+        window.addEventListener('touchstart', e => {
+            if (!audioCtx) initAudio();
+            if (e.touches[0]) touchStartX = e.touches[0].clientX;
+        }, { passive: true });
+
+        window.addEventListener('touchend', e => {
+            if (e.changedTouches[0]) {
+                const diffX = e.changedTouches[0].clientX - touchStartX;
+                if (Math.abs(diffX) > 60) {
+                    if (diffX < 0) nextMode();
+                    else prevMode();
+                }
+            }
+        }, { passive: true });
+
+        function updateCoords(clientX, clientY) {
+            targetMouse.x = (clientX / window.innerWidth) * 2.0 - 1.0;
+            targetMouse.y = -(clientY / window.innerHeight) * 2.0 + 1.0;
+            updateAudioKinematics(targetMouse.x, targetMouse.y);
+        }
+
+        window.addEventListener('mousemove', e => updateCoords(e.clientX, e.clientY));
+        window.addEventListener('touchmove', e => {
+            if (e.touches.length > 0) updateCoords(e.touches[0].clientX, e.touches[0].clientY);
+        }, { passive: true });
+
+        window.addEventListener('pointerdown', (e) => {
+            if (!audioCtx) initAudio();
+            if (!e.target.closest('#dock')) {
+                impulse = 1.0;
+                triggerAudioShock(1.2);
+            }
+        });
+
+        function resize() {
+            const dpr = Math.min(window.devicePixelRatio || 1, 1.5);
+            canvas.width = Math.floor(window.innerWidth * dpr);
+            canvas.height = Math.floor(window.innerHeight * dpr);
+            gl.viewport(0, 0, canvas.width, canvas.height);
+        }
+        window.addEventListener('resize', resize);
+        resize();
+
+        let startTime = performance.now();
+
+        function render() {
+            const currentTime = (performance.now() - startTime) * 0.001;
+            
+            currentMouse.x += (targetMouse.x - currentMouse.x) * 0.08;
+            currentMouse.y += (targetMouse.y - currentMouse.y) * 0.08;
+            impulse *= 0.93;
+
+            gl.uniform2f(uRes, canvas.width, canvas.height);
+            gl.uniform1f(uTime, currentTime);
+            gl.uniform2f(uMouse, currentMouse.x, currentMouse.y);
+            gl.uniform1f(uImpulse, impulse);
+            gl.uniform1i(uMode, currentMode);
+
+            gl.drawArrays(gl.TRIANGLES, 0, 6);
+            requestAnimationFrame(render);
+        }
+
+        render();
+    </script>
+</body>
+</html>
