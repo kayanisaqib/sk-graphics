@@ -1,0 +1,90 @@
+[
+  {
+    "title": "PSYCHO-OPTICS // Synesthetic Audio-Visual Engine",
+    "client": "Production Engine",
+    "category": "Synesthetic Kinetic Optics",
+    "assetUrl": "./psycho-optics.html",
+    "type": "interactive",
+    "description": "Multi-mode high-intensity optical illusion engine powered by WebGL fragment shaders and real-time Web Audio API procedural synthesis. Fully synced soundscapes driven by cursor kinematics."
+  },
+  {
+    "title": "MOIRÉ // Kinetic Interference Matrix",
+    "client": "Production Engine",
+    "category": "Optical Moiré Dynamics",
+    "assetUrl": "./moire-matrix.html",
+    "type": "interactive",
+    "description": "High-intensity optical moiré engine featuring counter-rotating polar frequency gratings, real-time triple-band chromatic aberration fringes, and reactive phase inversion."
+  },
+  {
+    "title": "AURA // Autonomous Intelligence Substrate",
+    "client": "Production Engine",
+    "category": "Spatial Hero Architecture",
+    "assetUrl": "./aura-intelligence.html",
+    "type": "interactive",
+    "description": "Commercial-tier spatial web environment featuring real-time GPU raymarching, dynamic kinetic typography, live HUD telemetry, and inertial camera physics."
+  },
+  {
+    "title": "CHRONOS // Kinetic Horology & Spatial Metamaterial",
+    "client": "Production Engine",
+    "category": "Luxury Spatial Architecture",
+    "assetUrl": "./chronos-luxury.html",
+    "type": "interactive",
+    "description": "Swiss haute horlogerie spatial engine featuring triple-axis nested gyroscopic raymarching, brushed Grade-5 titanium anisotropic reflections, and interactive tourbillon acceleration."
+  },
+  {
+    "title": "SPECTRA // Generative Wavefield Synthesis",
+    "client": "Production Engine",
+    "category": "Acoustic Spatial Synthesis",
+    "assetUrl": "./spectra-wavefield.html",
+    "type": "interactive",
+    "description": "Procedural volumetric wavefield driven by multi-octave harmonic noise shaders, dynamic acoustic impulse response, and real-time spectrogram telemetry."
+  },
+  {
+    "title": "Obsidian Monolith: Optical Prism",
+    "client": "GPU Shader",
+    "category": "Raymarched Metamaterial",
+    "assetUrl": "./obsidian-monolith.html",
+    "type": "interactive",
+    "description": "Faceted crystalline obsidian prism with internal chromatic dispersion, dynamic Fresnel reflections, and reactive 3D torque kinematics."
+  },
+  {
+    "title": "Hyperflux Core: Relativistic Singularity",
+    "client": "Production Engine",
+    "category": "Raymarched Vortex",
+    "assetUrl": "./hyperflux-core.html",
+    "type": "interactive",
+    "description": "Orbital spatial particle accelerator with cursor-following gravity mechanics."
+  },
+  {
+    "title": "Quantum Mesh: Interactive Spatial Grid",
+    "client": "Production Engine",
+    "category": "Interactive Canvas",
+    "assetUrl": "./quantum-mesh.html",
+    "type": "interactive",
+    "description": "Zero-dependency, 60fps responsive canvas mesh with real-time cursor warp physics."
+  },
+  {
+    "title": "Organic Utopia: Cascading Architecture",
+    "client": "SK Graphics",
+    "category": "Environment Design",
+    "assetUrl": "./sk-graphics-03.jpg",
+    "type": "image",
+    "description": "High-performance parametric architectural UI concept featuring cascading spatial geometry."
+  },
+  {
+    "title": "Parametric Form: Fluid Architecture",
+    "client": "SK Graphics",
+    "category": "3D Spatial Design",
+    "assetUrl": "./sk-graphics-02.jpg",
+    "type": "image",
+    "description": "Downloadable WebGL-ready fluid architecture asset designed for modern tech agencies."
+  },
+  {
+    "title": "Neon Metropolis: Explore & Create",
+    "client": "SK Graphics",
+    "category": "Digital Concept Art",
+    "assetUrl": "./sk-graphics-01.jpg",
+    "type": "image",
+    "description": "Cybernetic digital environment for high-conversion web experiences and volumetric lighting concepts."
+  }
+]
