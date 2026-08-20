@@ -1,0 +1,537 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <title>SPECTRA // Generative Wavefield</title>
+    
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@300;400;600;800&family=Space+Mono:wght@400;700&display=swap" rel="stylesheet">
+
+    <style>
+        * { margin: 0; padding: 0; box-sizing: border-box; }
+        html, body {
+            width: 100%; height: 100%;
+            overflow: hidden;
+            background-color: #030306;
+            color: #ffffff;
+            font-family: 'Plus Jakarta Sans', sans-serif;
+            -webkit-font-smoothing: antialiased;
+            touch-action: none;
+            user-select: none;
+            -webkit-user-select: none;
+        }
+
+        #glcanvas {
+            position: absolute;
+            top: 0; left: 0;
+            width: 100%; height: 100%;
+            z-index: 1;
+            display: block;
+        }
+
+        .viewport-overlay {
+            position: absolute;
+            top: 0; left: 0; width: 100%; height: 100%;
+            z-index: 2;
+            pointer-events: none;
+            background: 
+                radial-gradient(circle at 50% 35%, transparent 20%, rgba(3, 3, 6, 0.8) 85%),
+                linear-gradient(rgba(255, 255, 255, 0.015) 1px, transparent 1px),
+                linear-gradient(90deg, rgba(255, 255, 255, 0.015) 1px, transparent 1px);
+            background-size: 100% 100%, 40px 40px, 40px 40px;
+        }
+
+        .interface-layer {
+            position: absolute;
+            top: 0; left: 0; width: 100%; height: 100%;
+            z-index: 5;
+            display: flex;
+            flex-direction: column;
+            justify-content: space-between;
+            padding: clamp(16px, 4vw, 40px);
+            pointer-events: none;
+        }
+
+        .hud-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            width: 100%;
+            border-bottom: 1px solid rgba(255, 255, 255, 0.08);
+            padding-bottom: 14px;
+            backdrop-filter: blur(16px);
+            -webkit-backdrop-filter: blur(16px);
+            pointer-events: auto;
+        }
+
+        .brand-meta {
+            display: flex;
+            align-items: center;
+            gap: 12px;
+        }
+
+        .freq-dot {
+            width: 7px; height: 7px;
+            background: #ff0055;
+            border-radius: 50%;
+            box-shadow: 0 0 12px #ff0055;
+            animation: pulseFreq 1.8s infinite ease-in-out;
+        }
+        @keyframes pulseFreq { 0%, 100% { transform: scale(1); opacity: 1; } 50% { transform: scale(0.7); opacity: 0.3; } }
+
+        .brand-title {
+            font-family: 'Space Mono', monospace;
+            font-size: 0.75rem;
+            letter-spacing: 2px;
+            font-weight: 700;
+            text-transform: uppercase;
+        }
+
+        .telemetry-readout {
+            font-family: 'Space Mono', monospace;
+            font-size: 0.7rem;
+            color: #787888;
+            letter-spacing: 1.5px;
+        }
+        .telemetry-readout span { color: #ff0055; font-weight: 700; }
+
+        .hero-center {
+            max-width: 620px;
+            margin-top: auto;
+            margin-bottom: 18px;
+            pointer-events: auto;
+            background: radial-gradient(circle at 0% 50%, rgba(3, 3, 6, 0.9) 0%, rgba(3, 3, 6, 0.25) 75%, transparent 100%);
+            padding: 16px 0;
+        }
+
+        .badge-pill {
+            display: inline-flex;
+            align-items: center;
+            gap: 8px;
+            padding: 5px 12px;
+            background: rgba(255, 0, 85, 0.06);
+            border: 1px solid rgba(255, 0, 85, 0.25);
+            border-radius: 100px;
+            font-family: 'Space Mono', monospace;
+            font-size: 0.65rem;
+            letter-spacing: 1.5px;
+            text-transform: uppercase;
+            margin-bottom: 14px;
+            backdrop-filter: blur(10px);
+            color: #ff3377;
+        }
+
+        .hero-title {
+            font-size: clamp(2.2rem, 6vw, 4.8rem);
+            font-weight: 800;
+            line-height: 0.98;
+            letter-spacing: -1.5px;
+            text-transform: uppercase;
+            background: linear-gradient(180deg, #ffffff 40%, rgba(255, 255, 255, 0.45) 100%);
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+            margin-bottom: 14px;
+        }
+
+        .hero-desc {
+            font-size: clamp(0.82rem, 1.2vw, 0.98rem);
+            font-weight: 400;
+            line-height: 1.6;
+            color: #b0b0be;
+            max-width: 520px;
+            margin-bottom: 24px;
+        }
+
+        .cta-group {
+            display: flex;
+            align-items: center;
+            gap: 12px;
+            flex-wrap: wrap;
+        }
+
+        .btn-primary {
+            flex: 1;
+            min-width: 150px;
+            padding: 14px 24px;
+            background: #ffffff;
+            color: #030306;
+            border: none;
+            font-family: 'Plus Jakarta Sans', sans-serif;
+            font-size: 0.72rem;
+            font-weight: 700;
+            letter-spacing: 1.8px;
+            text-transform: uppercase;
+            border-radius: 4px;
+            cursor: pointer;
+            transition: all 0.2s ease;
+            box-shadow: 0 0 25px rgba(255, 255, 255, 0.15);
+            text-align: center;
+        }
+        .btn-primary:active { transform: scale(0.98); background: #e0e0e0; }
+
+        .btn-secondary {
+            flex: 1;
+            min-width: 150px;
+            padding: 14px 24px;
+            background: rgba(255, 0, 85, 0.04);
+            color: #ff3377;
+            border: 1px solid rgba(255, 0, 85, 0.3);
+            font-family: 'Plus Jakarta Sans', sans-serif;
+            font-size: 0.72rem;
+            font-weight: 600;
+            letter-spacing: 1.5px;
+            text-transform: uppercase;
+            border-radius: 4px;
+            cursor: pointer;
+            transition: all 0.2s ease;
+            backdrop-filter: blur(10px);
+            text-align: center;
+        }
+        .btn-secondary:active { background: rgba(255, 0, 85, 0.12); }
+
+        .hud-footer {
+            display: flex;
+            justify-content: space-between;
+            align-items: flex-end;
+            width: 100%;
+            border-top: 1px solid rgba(255, 255, 255, 0.08);
+            padding-top: 14px;
+            pointer-events: auto;
+        }
+
+        .footer-metric {
+            font-family: 'Space Mono', monospace;
+            font-size: 0.65rem;
+            color: #727280;
+            letter-spacing: 1.5px;
+            text-transform: uppercase;
+        }
+        .footer-metric b { color: #ffffff; }
+
+        .specs-drawer {
+            position: fixed;
+            bottom: 0; left: 0; width: 100%;
+            max-height: 85vh;
+            background: rgba(8, 8, 12, 0.95);
+            backdrop-filter: blur(25px);
+            -webkit-backdrop-filter: blur(25px);
+            border-top: 1px solid rgba(255, 0, 85, 0.35);
+            z-index: 100;
+            padding: 28px 24px;
+            transform: translateY(105%);
+            transition: transform 0.4s cubic-bezier(0.16, 1, 0.3, 1);
+            overflow-y: auto;
+            display: flex;
+            flex-direction: column;
+            gap: 20px;
+        }
+        .specs-drawer.active { transform: translateY(0%); }
+
+        .drawer-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            border-bottom: 1px solid rgba(255, 255, 255, 0.1);
+            padding-bottom: 16px;
+        }
+        .drawer-title {
+            font-family: 'Space Mono', monospace;
+            font-size: 0.85rem;
+            font-weight: 700;
+            letter-spacing: 2px;
+            color: #ff3377;
+        }
+        .drawer-close-btn {
+            background: rgba(255, 255, 255, 0.08);
+            border: 1px solid rgba(255, 255, 255, 0.2);
+            color: #ffffff;
+            padding: 6px 14px;
+            border-radius: 4px;
+            font-family: 'Space Mono', monospace;
+            font-size: 0.7rem;
+            cursor: pointer;
+            text-transform: uppercase;
+        }
+
+        .spec-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(220px, 1fr));
+            gap: 16px;
+        }
+        .spec-card {
+            background: rgba(255, 255, 255, 0.02);
+            border: 1px solid rgba(255, 0, 85, 0.15);
+            padding: 18px;
+            border-radius: 4px;
+        }
+        .spec-card h4 {
+            font-family: 'Space Mono', monospace;
+            font-size: 0.65rem;
+            color: #888898;
+            letter-spacing: 1.5px;
+            text-transform: uppercase;
+            margin-bottom: 6px;
+        }
+        .spec-card p {
+            font-size: 0.85rem;
+            color: #ffffff;
+            font-weight: 600;
+            line-height: 1.4;
+        }
+
+        @media (max-width: 768px) {
+            .telemetry-readout { display: none; }
+            .btn-primary, .btn-secondary { width: 100%; text-align: center; }
+        }
+    </style>
+</head>
+<body>
+
+    <canvas id="glcanvas"></canvas>
+    <div class="viewport-overlay"></div>
+
+    <main class="interface-layer">
+        <header class="hud-header">
+            <div class="brand-meta">
+                <div class="freq-dot"></div>
+                <div class="brand-title">SPECTRA // WAVEFIELD v3.2</div>
+            </div>
+            <div class="telemetry-readout">
+                FREQUENCY: <span>142.4 HZ // HARMONIC</span>
+            </div>
+        </header>
+
+        <section class="hero-center">
+            <div class="badge-pill">Generative Audio Synthesis</div>
+            <h1 class="hero-title">Acoustic<br>Manifold.</h1>
+            <p class="hero-desc">Volumetric procedural wave harmonics driven by multi-scale fractional noise shaders. Real-time acoustic impulse response, chromatic dispersion, and fluid resonance.</p>
+            <div class="cta-group">
+                <button class="btn-primary" onclick="injectHarmonic()">Inject Impulse</button>
+                <button class="btn-secondary" onclick="toggleTelemetry(true)">Spectrogram</button>
+            </div>
+        </section>
+
+        <footer class="hud-footer">
+            <div class="footer-metric">MODULATION: <b id="hud-mod">HARMONIC 04</b></div>
+            <div class="footer-metric">SYNTH ENGINE: <b>GLSL HARMONIC</b></div>
+        </footer>
+    </main>
+
+    <!-- Spectrogram Specs Drawer -->
+    <div class="specs-drawer" id="specs-drawer">
+        <div class="drawer-header">
+            <div class="drawer-title">● SPECTROGRAM & HARMONIC TELEMETRY</div>
+            <button class="drawer-close-btn" onclick="toggleTelemetry(false)">✕ Close</button>
+        </div>
+
+        <div class="spec-grid">
+            <div class="spec-card">
+                <h4>Harmonic Kernel</h4>
+                <p>Fractal Octave Wave Superposition (4 Passes)</p>
+            </div>
+            <div class="spec-card">
+                <h4>Dispersion Curve</h4>
+                <p>Triple-Band Chromatic Split (Magenta-Cyan)</p>
+            </div>
+            <div class="spec-card">
+                <h4>Resonance Decay</h4>
+                <p>0.94 Exponential Damping Per Frame</p>
+            </div>
+            <div class="spec-card">
+                <h4>Architecture</h4>
+                <p>Zero-Dependency WebGL 1.0 GPU Shader</p>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        const canvas = document.getElementById('glcanvas');
+        const gl = canvas.getContext('webgl', { powerPreference: "high-performance", alpha: false, antialias: false });
+
+        const vs = `attribute vec2 position; void main() { gl_Position = vec4(position, 0.0, 1.0); }`;
+
+        const fs = `
+            precision highp float;
+            uniform vec2 u_resolution;
+            uniform vec2 u_mouse;
+            uniform float u_time;
+            uniform float u_impulse;
+
+            mat2 rot(float a) {
+                float s = sin(a), c = cos(a);
+                return mat2(c, -s, s, c);
+            }
+
+            // Procedural Harmonic Wave Height Field
+            float waveField(vec3 p) {
+                vec2 q = p.xz * 0.9;
+                float h = 0.0;
+                
+                // Multi-octave wave harmonics
+                for (int i = 1; i <= 3; i++) {
+                    float fi = float(i);
+                    q *= rot(0.5 + fi * 0.3);
+                    h += sin(q.x * (1.8 * fi) + u_time * (1.2 * fi) + u_mouse.x * 2.0) * (0.22 / fi);
+                    h += cos(q.y * (1.5 * fi) - u_time * (0.9 * fi) + u_mouse.y * 1.5) * (0.18 / fi);
+                }
+
+                // Interactive impulse ripple
+                float dist = length(p.xz - u_mouse * 2.5);
+                h += sin(dist * 8.0 - u_time * 5.0) * exp(-dist * 0.8) * (0.35 + u_impulse * 0.6);
+
+                return p.y - h;
+            }
+
+            vec3 calcNormal(vec3 p) {
+                vec2 e = vec2(0.003, 0.0);
+                return normalize(vec3(
+                    waveField(p + e.xyy) - waveField(p - e.xyy),
+                    2.0 * e.x,
+                    waveField(p + e.yyx) - waveField(p - e.yyx)
+                ));
+            }
+
+            void main() {
+                vec2 uv = (gl_FragCoord.xy - 0.5 * u_resolution.xy) / min(u_resolution.x, u_resolution.y);
+                
+                float isPortrait = step(u_resolution.x, u_resolution.y);
+                vec3 ro = mix(vec3(0.0, 2.2, 3.8), vec3(0.0, 2.6, 3.4), isPortrait);
+                vec3 target = vec3(0.0, -0.2, 0.0);
+                
+                vec3 ww = normalize(target - ro);
+                vec3 uu = normalize(cross(ww, vec3(0.0, 1.0, 0.0)));
+                vec3 vv = normalize(cross(uu, ww));
+                vec3 rd = normalize(uv.x * uu + (uv.y - mix(0.0, 0.3, isPortrait)) * vv + 1.35 * ww);
+
+                float t = 0.1;
+                bool hit = false;
+                vec3 p;
+
+                for (int i = 0; i < 52; i++) {
+                    p = ro + rd * t;
+                    float d = waveField(p);
+                    if (abs(d) < 0.003) { hit = true; break; }
+                    if (t > 11.0) break;
+                    t += d * 0.55;
+                }
+
+                vec3 col = vec3(0.015, 0.015, 0.025);
+
+                if (hit) {
+                    vec3 n = calcNormal(p);
+                    vec3 l = normalize(vec3(1.5, 3.0, 2.0));
+                    vec3 v = -rd;
+
+                    float diff = max(dot(n, l), 0.0);
+                    vec3 h = normalize(l + v);
+                    float spec = pow(max(dot(n, h), 0.0), 36.0);
+                    float fresnel = pow(1.0 - max(dot(v, n), 0.0), 3.5);
+
+                    // Cyberpunk Magenta / Indigo / Cyan Spectral Palette
+                    vec3 baseCol = mix(vec3(0.03, 0.04, 0.08), vec3(0.8, 0.1, 0.4), fresnel);
+                    vec3 cyanGlow = vec3(0.0, 0.9, 0.8) * pow(diff, 2.0) * 0.6;
+                    
+                    col = baseCol + cyanGlow + vec3(1.0) * spec * (1.2 + u_impulse * 0.8);
+                    col = mix(col, vec3(0.015, 0.015, 0.025), smoothstep(2.0, 10.0, t));
+                }
+
+                // Volumetric horizon aura
+                vec3 auraColor = mix(vec3(0.2, 0.05, 0.35), vec3(1.0, 0.1, 0.4), u_impulse);
+                col += auraColor * exp(-uv.y * 2.5) * 0.35;
+
+                // ACES Filmic Curve & Contrast
+                col = (col * (2.51 * col + 0.03)) / (col * (2.43 * col + 0.59) + 0.14);
+                col *= (1.0 - length(uv) * 0.35);
+
+                gl_FragColor = vec4(col, 1.0);
+            }
+        `;
+
+        function createShader(gl, type, source) {
+            const shader = gl.createShader(type);
+            gl.shaderSource(shader, source);
+            gl.compileShader(shader);
+            return shader;
+        }
+
+        const program = gl.createProgram();
+        gl.attachShader(program, createShader(gl, gl.VERTEX_SHADER, vs));
+        gl.attachShader(program, createShader(gl, gl.FRAGMENT_SHADER, fs));
+        gl.linkProgram(program);
+        gl.useProgram(program);
+
+        const positionLocation = gl.getAttribLocation(program, 'position');
+        const buffer = gl.createBuffer();
+        gl.bindBuffer(gl.ARRAY_BUFFER, buffer);
+        gl.bufferData(gl.ARRAY_BUFFER, new Float32Array([-1,-1, 1,-1, -1,1, -1,1, 1,-1, 1,1]), gl.STATIC_DRAW);
+        gl.enableVertexAttribArray(positionLocation);
+        gl.vertexAttribPointer(positionLocation, 2, gl.FLOAT, false, 0, 0);
+
+        const resLocation = gl.getUniformLocation(program, 'u_resolution');
+        const timeLocation = gl.getUniformLocation(program, 'u_time');
+        const mouseLocation = gl.getUniformLocation(program, 'u_mouse');
+        const impulseLocation = gl.getUniformLocation(program, 'u_impulse');
+
+        let targetMouse = { x: 0.0, y: 0.0 };
+        let currentMouse = { x: 0.0, y: 0.0 };
+        let impulse = 0.0;
+
+        const modElement = document.getElementById('hud-mod');
+
+        function updateCoords(clientX, clientY) {
+            targetMouse.x = (clientX / window.innerWidth) * 2.0 - 1.0;
+            targetMouse.y = -(clientY / window.innerHeight) * 2.0 + 1.0;
+            if (modElement) {
+                const oct = Math.abs(Math.round(targetMouse.x * 8)) + 1;
+                modElement.innerText = `HARMONIC 0${oct}`;
+            }
+        }
+
+        window.addEventListener('mousemove', (e) => updateCoords(e.clientX, e.clientY));
+        window.addEventListener('touchmove', (e) => {
+            if (e.touches.length > 0) updateCoords(e.touches[0].clientX, e.touches[0].clientY);
+        }, { passive: true });
+
+        function injectHarmonic() {
+            impulse = 1.0;
+        }
+
+        function toggleTelemetry(isOpen) {
+            const drawer = document.getElementById('specs-drawer');
+            if (isOpen) drawer.classList.add('active');
+            else drawer.classList.remove('active');
+        }
+
+        function resize() {
+            const dpr = Math.min(window.devicePixelRatio || 1, 1.5);
+            canvas.width = Math.floor(window.innerWidth * dpr);
+            canvas.height = Math.floor(window.innerHeight * dpr);
+            gl.viewport(0, 0, canvas.width, canvas.height);
+        }
+        window.addEventListener('resize', resize);
+        resize();
+
+        let startTime = performance.now();
+
+        function render() {
+            const currentTime = (performance.now() - startTime) * 0.001;
+            
+            currentMouse.x += (targetMouse.x - currentMouse.x) * 0.05;
+            currentMouse.y += (targetMouse.y - currentMouse.y) * 0.05;
+            impulse *= 0.94;
+
+            gl.uniform2f(resLocation, canvas.width, canvas.height);
+            gl.uniform1f(timeLocation, currentTime);
+            gl.uniform2f(mouseLocation, currentMouse.x, currentMouse.y);
+            gl.uniform1f(impulseLocation, impulse);
+
+            gl.drawArrays(gl.TRIANGLES, 0, 6);
+            requestAnimationFrame(render);
+        }
+
+        render();
+    </script>
+</body>
+</html>
