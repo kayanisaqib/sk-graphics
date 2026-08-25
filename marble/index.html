@@ -1,23 +1,18 @@
 <!DOCTYPE html>
 <html lang="en">
-    <head>
+<head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     
-    <!-- 1. Core SEO & Local SEO -->
     <title>Ahmed Marble | Premium CNC Cutting & Custom Inlays in Islamabad</title>
     <meta name="description" content="Islamabad's top-rated marble factory specializing in precision CNC cutting, waterjet designs, and custom marble inlays for luxury homes in DHA and Bahria Town.">
     <meta name="keywords" content="Best marble factory in Islamabad, Custom marble inlay flooring, CNC marble cutting services near me, Premium marble suppliers DHA Islamabad, Ziarat white marble">
     
-    <!-- Geo-Tagging for Local SEO -->
     <meta name="geo.region" content="PK-IS">
     <meta name="geo.placename" content="Islamabad">
 
-    <!-- Fonts & Styling -->
-    <link href="https://fonts.googleapis.com/css2?family=Cinzel:wght@600;700&family=Montserrat:wght@300;400;600&display=swap" rel="stylesheet">
-    <link rel="stylesheet" href="style.css">
+    <link href="https://fonts.googleapis.com/css2?family=Cinzel:wght@600;700&family=Montserrat:wght@300;400;600&family=Playfair+Display:wght@700&display=swap" rel="stylesheet">
 
-    <!-- 2. LocalBusiness Schema (Local SEO & GEO) -->
     <script type="application/ld+json">
     {
       "@context": "https://schema.org",
@@ -40,7 +35,6 @@
     }
     </script>
 
-    <!-- 3. FAQ Schema (AEO - Answer Engine Optimization) -->
     <script type="application/ld+json">
     {
       "@context": "https://schema.org",
@@ -62,17 +56,15 @@
       }]
     }
     </script>
-</head>
-</head>
-<style>
-    :root {
-        --dark: #0d0d0d;
-        --light: #ffffff;
-        --gold: #d4af37;
-        --glass-bg: rgba(255, 255, 255, 0.05);
-        --glass-border: rgba(212, 175, 55, 0.3);
-    }
 
+    <style>
+        :root {
+            --dark: #0d0d0d;
+            --light: #ffffff;
+            --gold: #d4af37;
+            --glass-bg: rgba(255, 255, 255, 0.05);
+            --glass-border: rgba(212, 175, 55, 0.3);
+        }
 
         body {
             font-family: 'Montserrat', sans-serif;
@@ -80,6 +72,7 @@
             color: var(--light);
             line-height: 1.6;
             overflow-x: hidden;
+            margin: 0;
         }
 
         h1, h2, h3 {
@@ -87,7 +80,6 @@
             font-weight: 700;
         }
 
-        /* --- Hero Section --- */
         .hero {
             position: relative;
             height: 100vh;
@@ -96,7 +88,6 @@
             justify-content: center;
             text-align: center;
             padding: 0 20px;
-            /* Premium dark background with slight gradient */
             background: linear-gradient(rgba(10, 10, 10, 0.7), rgba(10, 10, 10, 0.9)), url('https://images.unsplash.com/photo-1600585154340-be6161a56a0c?ixlib=rb-4.0.3&auto=format&fit=crop&w=1920&q=80') center/cover fixed;
         }
 
@@ -122,7 +113,6 @@
             color: #d1d1d1;
         }
 
-        /* --- Premium Buttons --- */
         .btn {
             display: inline-block;
             padding: 16px 45px;
@@ -133,23 +123,32 @@
             border-radius: 4px;
             transition: all 0.4s ease;
             letter-spacing: 1px;
+            margin: 10px;
         }
 
         .btn-gold {
-            background-color: var(--gold);
-            color: var(--dark);
-            border: 1px solid var(--gold);
+            background: linear-gradient(45deg, #d4af37, #f3e5ab);
+            color: #000;
             box-shadow: 0 4px 15px rgba(212, 175, 55, 0.3);
+            border: 2px solid transparent;
         }
 
         .btn-gold:hover {
-            background-color: transparent;
-            color: var(--gold);
-            box-shadow: 0 6px 20px rgba(212, 175, 55, 0.5);
             transform: translateY(-3px);
+            box-shadow: 0 6px 20px rgba(212, 175, 55, 0.5);
         }
 
-        /* --- Services Section (Glassmorphism) --- */
+        .btn-outline {
+            background: transparent;
+            border: 2px solid var(--gold);
+            color: var(--gold);
+        }
+
+        .btn-outline:hover {
+            background: var(--gold);
+            color: var(--dark);
+        }
+
         .services {
             padding: 100px 20px;
             background-color: var(--dark);
@@ -170,7 +169,6 @@
             margin: 0 auto;
         }
 
-        /* The Glass Card */
         .card {
             background: var(--glass-bg);
             backdrop-filter: blur(12px);
@@ -187,6 +185,12 @@
             border-color: var(--gold);
             box-shadow: 0 15px 40px rgba(212, 175, 55, 0.15);
         }
+        
+        .card-icon {
+            font-size: 2.5rem;
+            margin-bottom: 15px;
+            color: var(--gold);
+        }
 
         .card h3 {
             font-size: 1.8rem;
@@ -198,8 +202,39 @@
             color: #b3b3b3;
             font-size: 1.1rem;
         }
+        
+        .gallery {
+            padding: 80px 20px;
+            text-align: center;
+            background-color: #111;
+        }
+        
+        .gallery-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
+            gap: 20px;
+            max-width: 1200px;
+            margin: 40px auto 0;
+        }
+        
+        .gallery-item {
+            height: 250px;
+            background-color: var(--glass-bg);
+            border: 1px solid var(--glass-border);
+            border-radius: 8px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            color: #888;
+            font-size: 0.9rem;
+            transition: all 0.3s ease;
+        }
+        
+        .gallery-item:hover {
+            border-color: var(--gold);
+            transform: scale(1.02);
+        }
 
-        /* --- Scroll Animations (Kinetic Effect) --- */
         .reveal {
             opacity: 0;
             transform: translateY(50px);
@@ -211,7 +246,6 @@
             transform: translateY(0);
         }
 
-        /* --- Footer CTA --- */
         .footer-cta {
             background: linear-gradient(to top, #111, var(--dark));
             padding: 80px 20px;
@@ -224,7 +258,6 @@
             margin-bottom: 25px;
         }
 
-        /* --- Floating WhatsApp Button --- */
         .floating-wa {
             position: fixed;
             bottom: 30px;
@@ -263,70 +296,83 @@
             100% { box-shadow: 0 0 0 0 rgba(37, 211, 102, 0); }
         }
 
-        /* Mobile Adjustments */
         @media (max-width: 768px) {
             .hero h1 { font-size: 2.4rem; }
             .services h2 { font-size: 2.2rem; }
+            .btn { padding: 12px 25px; font-size: 1rem; display: block; margin: 10px auto; max-width: 280px;}
             .floating-wa {
                 bottom: 20px;
                 right: 20px;
                 padding: 12px 18px;
             }
-            .floating-wa span { display: none; /* Hides text on small screens, shows only icon */ }
+            .floating-wa span { display: none; }
             .floating-wa svg { margin-right: 0; }
         }
     </style>
 </head>
 <body>
 
-    <!-- Hero Section -->
     <section class="hero">
         <div class="hero-content reveal">
             <h1>Precision CNC <br><span>Marble Designs</span></h1>
             <p>Elevating spaces in DHA & Bahria Town with custom, high-end marble craftsmanship. Modern technology meets timeless luxury.</p>
-            <!-- Direct Phone Call Action (Dummy Number) -->
-            <a href="tel:+923001234567" class="btn btn-gold">Call For A Quote</a>
-            <a href="catalog.html" class="btn btn-gold" style="margin-left: 10px; background: linear-gradient(45deg, #d4af37, #f3e5ab); color: #000;">📥 Download 2026 Catalog</a>
-
+            <div style="margin-top: 30px;">
+                <a href="catalog.html" class="btn btn-gold">
+                    📥 Download 2026 Catalog
+                </a>
+                <a href="tel:+923000000000" class="btn btn-outline">
+                    Call For A Quote
+                </a>
+            </div>
         </div>
     </section>
 
-    <!-- Services Section -->
     <section class="services">
         <h2 class="reveal">Our Premium Services</h2>
         <div class="grid">
             <div class="card reveal">
+                <div class="card-icon">🎯</div>
                 <h3>Custom CNC Cutting</h3>
                 <p>Flawless, millimeter-perfect cuts for intricate geometric designs and modern architecture.</p>
             </div>
             <div class="card reveal">
+                <div class="card-icon">✨</div>
                 <h3>Luxury Inlays</h3>
                 <p>Beautiful marble inlay work combining different colors for statement floors and feature walls.</p>
             </div>
             <div class="card reveal">
+                <div class="card-icon">🏢</div>
                 <h3>Commercial Projects</h3>
                 <p>Scalable production for plazas, hotels, and luxury villas with guaranteed timely delivery.</p>
             </div>
         </div>
     </section>
 
-    <!-- Footer CTA -->
+    <section class="gallery" id="portfolio">
+        <h2 class="reveal" style="color: var(--gold); font-size: 2.8rem; margin-bottom: 20px;">Our Craftsmanship</h2>
+        <p class="reveal" style="color: #b3b3b3;">Precision engineering showcased in recent projects.</p>
+        
+        <div class="gallery-grid reveal">
+            <div class="gallery-item">Image Slot 1 (800x600)</div>
+            <div class="gallery-item">Image Slot 2 (800x600)</div>
+            <div class="gallery-item">Image Slot 3 (800x600)</div>
+            <div class="gallery-item">Image Slot 4 (800x600)</div>
+        </div>
+    </section>
+
     <section class="footer-cta">
         <h2 class="reveal">Ready to transform your space?</h2>
         <p class="reveal" style="margin-bottom: 40px; color: #a1a1a1; font-size: 1.1rem;">Visit our new factory at T-Chowk, Rawat or connect with us instantly.</p>
-        <!-- Direct Phone Call Action (Dummy Number) -->
-        <a href="tel:+923001234567" class="btn btn-gold reveal">Call Now</a>
+        <a href="tel:+923000000000" class="btn btn-gold reveal">Call Now</a>
     </section>
 
-    <!-- Sticky WhatsApp Floating Button (Direct Message Action) -->
-    <a href="https://wa.me/923125994524?text=Hi,%20I%20am%20interested%20in%20Premium%20CNC%20Marble%20Designs.%20Please%20provide%20a%20quote." class="floating-wa" target="_blank">
+    <a href="https://wa.me/923000000000?text=Hi,%20I%20am%20interested%20in%20Premium%20CNC%20Marble%20Designs.%20Please%20provide%20a%20quote." class="floating-wa">
         <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 448 512">
-            <path d="M380.9 97.1C339 55.1 283.2 32 223.9 32c-122.4 0-222 99.6-222 222 0 39.1 10.2 77.3 29.6 111L0 480l117.7-30.9c32.4 17.7 68.9 27 106.1 27h.1c122.3 0 224.1-99.6 224.1-222 0-59.3-25.2-115-67.1-157.1zm-157 341.6c-33.2 0-65.7-8.9-94-25.7l-6.7-4-69.8 18.3L72 359.2l-4.4-7c-18.5-29.4-28.2-63.3-28.2-98.2 0-101.7 82.8-184.5 184.6-184.5 49.3 0 95.6 19.2 130.4 54.1 34.8 34.9 56.2 81.2 56.1 130.5 0 101.8-84.9 184.6-186.6 184.6zm101.2-138.2c-5.5-2.8-32.8-16.2-37.9-18-5.1-1.9-8.8-2.8-12.5 2.8-3.7 5.6-14.3 18-17.6 21.8-3.2 3.7-6.5 4.2-12 1.4-32.6-16.3-54-29.1-75.5-66-5.7-9.8 5.7-9.1 16.3-30.3 1.8-3.7.9-6.9-.5-9.7-1.4-2.8-12.5-30.1-17.1-41.2-4.5-10.8-9.1-9.3-12.5-9.5-3.2-.2-6.9-.2-10.6-.2-3.7 0-9.7 1.4-14.8 6.9-5.1 5.6-19.4 19-19.4 46.3 0 27.3 19.9 53.7 22.6 57.4 2.8 3.7 39.1 59.7 94.8 83.8 35.2 15.2 49 16.5 66.6 13.9 10.7-1.6 32.8-13.4 37.4-26.4 4.6-13 4.6-24.1 3.2-26.4-1.3-2.5-5-3.9-10.5-6.6z"/>
+            <path d="M380.9 97.1C339 55.1 283.2 32 223.9 32c-122.4 0-222 99.6-222 222 0 39.1 10.2 77.3 29.6 111L0 480l117.7-30.9c32.4 17.7 68.9 27 106.1 27h.1c122.3 0 224.1-99.6 224.1-222 0-59.3-25.2-115-67.1-157zm-157 341.6c-33.2 0-65.7-8.9-94-25.7l-6.7-4-69.8 18.3L72 359.2l-4.4-7c-18.5-29.4-28.2-63.3-28.2-98.2 0-101.7 82.8-184.5 184.6-184.5 49.3 0 95.6 19.2 130.4 54.1 34.8 34.9 56.2 81.2 56.1 130.5 0 101.8-84.9 184.6-186.6 184.6zm101.2-138.2c-5.5-2.8-32.8-16.2-37.9-18-5.1-1.9-8.8-2.8-12.5 2.8-3.7 5.6-14.3 18-17.6 21.8-3.2 3.7-6.5 4.2-12 1.4-32.6-16.3-54-29.1-75.5-66-5.7-9.8 5.7-9.1 16.3-30.3 1.8-3.7.9-6.9-.5-9.7-1.4-2.8-12.5-30.1-17.1-41.2-4.5-10.8-9.1-9.3-12.5-9.5-3.2-.2-6.9-.2-10.6-.2-3.7 0-9.7 1.4-14.8 6.9-5.1 5.6-19.4 19-19.4 46.3 0 27.3 19.9 53.7 22.6 57.4 2.8 3.7 39.1 59.7 94.8 83.8 35.2 15.2 49 16.5 66.6 13.9 10.7-1.6 32.8-13.4 37.4-26.4 4.6-13 4.6-24.1 3.2-26.4-1.3-2.5-5-3.9-10.5-6.6z"/>
         </svg>
         <span>Chat on WhatsApp</span>
     </a>
 
-    <!-- JavaScript for Kinetic Scroll Animations -->
     <script>
         document.addEventListener('DOMContentLoaded', () => {
             const reveals = document.querySelectorAll('.reveal');
@@ -335,12 +381,11 @@
                 entries.forEach(entry => {
                     if (entry.isIntersecting) {
                         entry.target.classList.add('active');
-                        // Optional: Stop observing once revealed so it doesn't animate out and in repeatedly
                         observer.unobserve(entry.target);
                     }
                 });
             }, {
-                threshold: 0.15, // Trigger when 15% of the element is visible
+                threshold: 0.15,
                 rootMargin: "0px 0px -50px 0px"
             });
 
@@ -349,6 +394,5 @@
             });
         });
     </script>
-
 </body>
 </html>
