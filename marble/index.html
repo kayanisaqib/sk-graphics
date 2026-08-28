@@ -308,6 +308,26 @@
             .floating-wa span { display: none; }
             .floating-wa svg { margin-right: 0; }
         }
+        .hero-buttons {
+    margin-top: 30px;
+    display: flex;
+    justify-content: center;
+    gap: 20px;
+    flex-wrap: wrap;
+}
+
+@media (max-width: 768px) {
+    .hero-buttons {
+        flex-direction: column;
+        align-items: center;
+        gap: 18px; /* Provides the perfect gap between buttons on mobile */
+    }
+    
+    .hero-buttons .btn {
+        margin: 0; /* Removes old margins to let the Flexbox gap apply correctly */
+        width: 100%;
+    }
+}
     </style>
 </head>
 <body>
@@ -316,14 +336,14 @@
         <div class="hero-content reveal">
             <h1>Precision CNC <br><span>Marble Designs</span></h1>
             <p>Elevating spaces in DHA & Bahria Town with custom, high-end marble craftsmanship. Modern technology meets timeless luxury.</p>
-            <div style="margin-top: 30px;">
-                <a href="catalog.html" class="btn btn-gold">
-                    📥 Download 2026 Catalog
-                </a>
-                <a href="tel:+923125994524" class="btn btn-outline">
-                    Call For A Quote
-                </a>
-            </div>
+            <div class="hero-buttons">
+    <a href="catalog.html" download class="btn btn-gold">
+        📥 Download 2026 Catalog
+    </a>
+    <a href="tel:+923125994524" class="btn btn-outline">
+        Call For A Quote
+    </a>
+</div>
         </div>
     </section>
 
