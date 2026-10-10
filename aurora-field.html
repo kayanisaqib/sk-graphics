@@ -1,0 +1,751 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <title>AURORA // Magnetic Field Visualizer</title>
+    <style>
+        :root {
+            --glass-bg: rgba(20, 20, 25, 0.6);
+            --glass-border: rgba(255, 255, 255, 0.1);
+            --glass-glow: rgba(255, 255, 255, 0.05);
+            --text-color: #00ffcc;
+        }
+
+        * {
+            box-sizing: border-box;
+            user-select: none;
+            -webkit-user-select: none;
+        }
+
+        body, html {
+            margin: 0;
+            padding: 0;
+            width: 100%;
+            height: 100%;
+            background-color: #000000;
+            overflow: hidden;
+            font-family: 'Courier New', Courier, monospace;
+            cursor: crosshair;
+            touch-action: none;
+        }
+
+        #glcanvas, #ui-canvas {
+            position: absolute;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            z-index: 1;
+        }
+
+        #ui-canvas {
+            z-index: 2;
+            pointer-events: none;
+        }
+
+        /* Glass Controls Dock */
+        #controls {
+            position: absolute;
+            bottom: 30px;
+            left: 50%;
+            transform: translateX(-50%);
+            display: flex;
+            gap: 15px;
+            padding: 15px 25px;
+            background: var(--glass-bg);
+            backdrop-filter: blur(12px);
+            -webkit-backdrop-filter: blur(12px);
+            border: 1px solid var(--glass-border);
+            border-radius: 100px;
+            box-shadow: 0 8px 32px 0 var(--glass-glow);
+            z-index: 10;
+        }
+
+        .btn {
+            background: transparent;
+            border: 1px solid rgba(255, 255, 255, 0.2);
+            color: rgba(255, 255, 255, 0.7);
+            font-family: 'Courier New', Courier, monospace;
+            font-size: 12px;
+            padding: 8px 16px;
+            border-radius: 50px;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            text-transform: uppercase;
+            letter-spacing: 1px;
+            outline: none;
+        }
+
+        .btn:hover {
+            background: rgba(255, 255, 255, 0.1);
+            color: #fff;
+            border-color: rgba(255, 255, 255, 0.5);
+        }
+
+        .btn.active {
+            background: rgba(255, 255, 255, 0.15);
+            color: var(--text-color);
+            border-color: var(--text-color);
+            box-shadow: 0 0 10px rgba(0, 255, 204, 0.2);
+        }
+
+        .btn-mute.muted {
+            color: #ff3366;
+            border-color: #ff3366;
+        }
+
+        #hud {
+            position: absolute;
+            top: 30px;
+            left: 30px;
+            color: var(--text-color);
+            z-index: 10;
+            pointer-events: none;
+            font-size: 12px;
+            line-height: 1.6;
+            text-shadow: 0 0 5px rgba(0, 255, 204, 0.5);
+            background: rgba(0, 0, 0, 0.4);
+            padding: 15px;
+            border-radius: 8px;
+            border: 1px solid rgba(0, 255, 204, 0.2);
+            transition: all 0.3s ease;
+        }
+
+        .hud-title {
+            font-size: 14px;
+            font-weight: bold;
+            margin-bottom: 8px;
+            letter-spacing: 2px;
+            color: #fff;
+        }
+        
+        .hud-row {
+            display: flex;
+            justify-content: space-between;
+            width: 220px;
+        }
+        
+        .hud-label {
+            opacity: 0.7;
+        }
+
+        /* Overlay for initial interaction */
+        #start-overlay {
+            position: absolute;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background: rgba(0, 0, 0, 0.85);
+            z-index: 100;
+            display: flex;
+            flex-direction: column;
+            justify-content: center;
+            align-items: center;
+            color: #fff;
+            cursor: pointer;
+            transition: opacity 0.5s ease;
+        }
+
+        .pulse-text {
+            animation: pulse 2s infinite;
+            font-size: 18px;
+            letter-spacing: 4px;
+        }
+
+        @keyframes pulse {
+            0% { opacity: 0.5; }
+            50% { opacity: 1; text-shadow: 0 0 15px var(--text-color); }
+            100% { opacity: 0.5; }
+        }
+
+        @media (max-width: 768px) {
+            #controls {
+                flex-wrap: wrap;
+                justify-content: center;
+                border-radius: 20px;
+                width: 90%;
+                bottom: 20px;
+            }
+            #hud {
+                top: 15px;
+                left: 15px;
+                transform: scale(0.85);
+                transform-origin: top left;
+            }
+        }
+    </style>
+</head>
+<body>
+
+    <div id="start-overlay">
+        <div style="font-size: 24px; margin-bottom: 20px; font-weight: bold; letter-spacing: 8px;">AURORA</div>
+        <div class="pulse-text">CLICK TO INITIALIZE</div>
+    </div>
+
+    <canvas id="glcanvas"></canvas>
+    <canvas id="ui-canvas"></canvas>
+
+    <div id="hud">
+        <div class="hud-title">AURORA // CORE</div>
+        <div class="hud-row"><span class="hud-label">MODE:</span> <span id="hud-mode">BOREALIS</span></div>
+        <div class="hud-row"><span class="hud-label">FIELD STR:</span> <span id="hud-field">0.00</span></div>
+        <div class="hud-row"><span class="hud-label">FLOW RATE:</span> <span id="hud-flow">0.00</span></div>
+        <div class="hud-row"><span class="hud-label">STATUS:</span> <span>● ACTIVE</span></div>
+    </div>
+
+    <div id="controls">
+        <button class="btn active" id="btn-borealis" onclick="setMode(0)">Borealis</button>
+        <button class="btn" id="btn-solar" onclick="setMode(1)">Solar Flare</button>
+        <button class="btn" id="btn-magneto" onclick="setMode(2)">Magnetosphere</button>
+        <button class="btn" id="btn-reset" onclick="resetSim()">Reset</button>
+        <button class="btn btn-mute" id="btn-mute" onclick="toggleMute()">Mute ●</button>
+    </div>
+
+<script type="x-shader/x-vertex" id="vertex-shader">
+    attribute vec2 a_position;
+    varying vec2 v_uv;
+    void main() {
+        v_uv = a_position * 0.5 + 0.5;
+        gl_Position = vec4(a_position, 0.0, 1.0);
+    }
+</script>
+
+<script type="x-shader/x-fragment" id="fragment-shader">
+    precision highp float;
+    varying vec2 v_uv;
+    
+    uniform float u_time;
+    uniform vec2 u_resolution;
+    uniform vec2 u_mouse;
+    uniform int u_mode; // 0: Borealis, 1: Solar, 2: Magneto
+    
+    // Simplex noise implementation snippet
+    vec3 mod289(vec3 x) { return x - floor(x * (1.0 / 289.0)) * 289.0; }
+    vec2 mod289(vec2 x) { return x - floor(x * (1.0 / 289.0)) * 289.0; }
+    vec3 permute(vec3 x) { return mod289(((x*34.0)+1.0)*x); }
+    float snoise(vec2 v) {
+        const vec4 C = vec4(0.211324865405187,  // (3.0-sqrt(3.0))/6.0
+                            0.366025403784439,  // 0.5*(sqrt(3.0)-1.0)
+                            -0.577350269189626, // -1.0 + 2.0 * C.x
+                            0.024390243902439); // 1.0 / 41.0
+        vec2 i  = floor(v + dot(v, C.yy) );
+        vec2 x0 = v -   i + dot(i, C.xx);
+        vec2 i1;
+        i1 = (x0.x > x0.y) ? vec2(1.0, 0.0) : vec2(0.0, 1.0);
+        vec4 x12 = x0.xyxy + C.xxzz;
+        x12.xy -= i1;
+        i = mod289(i);
+        vec3 p = permute( permute( i.y + vec3(0.0, i1.y, 1.0 ))
+            + i.x + vec3(0.0, i1.x, 1.0 ));
+        vec3 m = max(0.5 - vec3(dot(x0,x0), dot(x12.xy,x12.xy), dot(x12.zw,x12.zw)), 0.0);
+        m = m*m ;
+        m = m*m ;
+        vec3 x = 2.0 * fract(p * C.www) - 1.0;
+        vec3 h = abs(x) - 0.5;
+        vec3 ox = floor(x + 0.5);
+        vec3 a0 = x - ox;
+        m *= 1.79284291400159 - 0.85373472095314 * ( a0*a0 + h*h );
+        vec3 g;
+        g.x  = a0.x  * x0.x  + h.x  * x0.y;
+        g.yz = a0.yz * x12.xz + h.yz * x12.yw;
+        return 130.0 * dot(m, g);
+    }
+    
+    // FBM
+    float fbm(vec2 p) {
+        float value = 0.0;
+        float amplitude = 0.5;
+        for (int i = 0; i < 5; i++) {
+            value += amplitude * snoise(p);
+            p *= 2.0;
+            amplitude *= 0.5;
+        }
+        return value;
+    }
+
+    void main() {
+        vec2 uv = gl_FragCoord.xy / u_resolution.xy;
+        vec2 p = uv * 2.0 - 1.0;
+        p.x *= u_resolution.x / u_resolution.y;
+        
+        vec2 mouse = u_mouse * 2.0 - 1.0;
+        mouse.x *= u_resolution.x / u_resolution.y;
+        
+        float distToMouse = length(p - mouse);
+        float mouseInfluence = smoothstep(1.5, 0.0, distToMouse);
+        
+        vec3 color = vec3(0.0);
+        
+        // Stars
+        float starNoise = snoise(p * 200.0 + u_time * 0.05);
+        float stars = smoothstep(0.95, 1.0, starNoise) * (0.3 + 0.7 * sin(u_time * 2.0 + p.x * 10.0));
+        color += vec3(stars);
+        
+        // Aurora / Magnetic Field base
+        float t = u_time * 0.2;
+        vec2 q = p;
+        
+        // Bend space based on mode and mouse
+        if (u_mode == 0) {
+            // Borealis - flowing curtains
+            q.x += fbm(p + t) * 0.5 + mouseInfluence * 0.3 * sin(t);
+            q.y += fbm(p + vec2(t)) * 0.2;
+            
+            float aurora = 0.0;
+            for(float i = 0.0; i < 4.0; i++) {
+                float n = fbm(q * (2.0 + i) - vec2(0.0, t * (i + 1.0)));
+                aurora += abs(1.0 / (q.y + n * 0.5 + 0.5)) * 0.05;
+            }
+            
+            vec3 auroraColor = mix(vec3(0.0, 1.0, 0.5), vec3(0.0, 0.4, 0.8), q.y);
+            color += auroraColor * aurora * smoothstep(-1.0, 0.5, p.y);
+            
+        } else if (u_mode == 1) {
+            // Solar Flare
+            q = p;
+            q.y += 1.0; // origin at bottom
+            vec2 dir = normalize(q);
+            float r = length(q);
+            
+            float n = fbm(vec2(atan(dir.y, dir.x) * 3.0, r * 2.0 - t * 3.0));
+            float flare = smoothstep(0.8, 0.0, r - n * 0.5 + mouseInfluence * 0.2);
+            flare += abs(1.0 / (q.x * 5.0 + sin(r * 10.0 - t * 5.0))) * 0.1 * smoothstep(1.0, 0.0, r);
+            
+            vec3 flareColor = mix(vec3(1.0, 0.2, 0.0), vec3(1.0, 0.8, 0.2), 1.0 - r);
+            color += flareColor * flare;
+            
+        } else {
+            // Magnetosphere
+            vec2 m1 = vec2(0.0, 0.5) + mouse * 0.2; // Pole 1
+            vec2 m2 = vec2(0.0, -0.5) - mouse * 0.2; // Pole 2
+            
+            float v1 = length(p - m1);
+            float v2 = length(p - m2);
+            
+            float field = v1 * v2;
+            float lines = fract(field * 10.0 - t * 2.0);
+            float intensity = smoothstep(0.1, 0.0, abs(lines - 0.5)) * smoothstep(2.0, 0.0, field);
+            
+            vec3 magColor = vec3(0.4, 0.0, 1.0) * intensity;
+            magColor += vec3(0.0, 0.8, 1.0) * (0.05 / v1 + 0.05 / v2); // Pole glow
+            
+            color += magColor;
+        }
+        
+        // Vertical gradient (dark ground)
+        if (u_mode == 0) {
+            color *= smoothstep(-1.0, -0.2, p.y);
+        }
+        
+        // Vignette
+        color *= 1.0 - length(p) * 0.2;
+        
+        gl_FragColor = vec4(color, 1.0);
+    }
+</script>
+
+<script>
+    // --- State ---
+    const state = {
+        initialized: false,
+        mode: 0, // 0: Borealis, 1: Solar, 2: Magneto
+        mouseX: 0.5,
+        mouseY: 0.5,
+        targetMouseX: 0.5,
+        targetMouseY: 0.5,
+        time: 0,
+        muted: false,
+        fieldStrength: 0,
+        flowRate: 0,
+        modeNames: ['BOREALIS', 'SOLAR FLARE', 'MAGNETOSPHERE'],
+        colors: [
+            '#00ffcc', // Borealis
+            '#ff6600', // Solar
+            '#aa00ff'  // Magneto
+        ]
+    };
+
+    // --- WebGL Setup ---
+    const canvas = document.getElementById('glcanvas');
+    const gl = canvas.getContext('webgl');
+    let program, uTimeLocation, uResLocation, uMouseLocation, uModeLocation;
+
+    function initWebGL() {
+        if (!gl) {
+            console.error('WebGL not supported');
+            return;
+        }
+
+        const vsSource = document.getElementById('vertex-shader').text;
+        const fsSource = document.getElementById('fragment-shader').text;
+
+        const vertexShader = createShader(gl, gl.VERTEX_SHADER, vsSource);
+        const fragmentShader = createShader(gl, gl.FRAGMENT_SHADER, fsSource);
+
+        program = gl.createProgram();
+        gl.attachShader(program, vertexShader);
+        gl.attachShader(program, fragmentShader);
+        gl.linkProgram(program);
+
+        if (!gl.getProgramParameter(program, gl.LINK_STATUS)) {
+            console.error('Program link error:', gl.getProgramInfoLog(program));
+            return;
+        }
+
+        const positionBuffer = gl.createBuffer();
+        gl.bindBuffer(gl.ARRAY_BUFFER, positionBuffer);
+        gl.bufferData(gl.ARRAY_BUFFER, new Float32Array([
+            -1.0, -1.0,
+             1.0, -1.0,
+            -1.0,  1.0,
+            -1.0,  1.0,
+             1.0, -1.0,
+             1.0,  1.0
+        ]), gl.STATIC_DRAW);
+
+        const positionLocation = gl.getAttribLocation(program, 'a_position');
+        gl.enableVertexAttribArray(positionLocation);
+        gl.vertexAttribPointer(positionLocation, 2, gl.FLOAT, false, 0, 0);
+
+        uTimeLocation = gl.getUniformLocation(program, 'u_time');
+        uResLocation = gl.getUniformLocation(program, 'u_resolution');
+        uMouseLocation = gl.getUniformLocation(program, 'u_mouse');
+        uModeLocation = gl.getUniformLocation(program, 'u_mode');
+
+        resizeCanvas();
+        window.addEventListener('resize', resizeCanvas);
+    }
+
+    function createShader(gl, type, source) {
+        const shader = gl.createShader(type);
+        gl.shaderSource(shader, source);
+        gl.compileShader(shader);
+        if (!gl.getShaderParameter(shader, gl.COMPILE_STATUS)) {
+            console.error('Shader compile error:', gl.getShaderInfoLog(shader));
+            gl.deleteShader(shader);
+            return null;
+        }
+        return shader;
+    }
+
+    function resizeCanvas() {
+        canvas.width = window.innerWidth;
+        canvas.height = window.innerHeight;
+        gl.viewport(0, 0, canvas.width, canvas.height);
+        
+        // Also resize UI canvas
+        uiCanvas.width = window.innerWidth;
+        uiCanvas.height = window.innerHeight;
+    }
+
+    // --- UI Canvas (Particles & HUD accents) ---
+    const uiCanvas = document.getElementById('ui-canvas');
+    const ctx = uiCanvas.getContext('2d');
+    const particles = [];
+
+    class Particle {
+        constructor() {
+            this.reset();
+        }
+        
+        reset() {
+            this.x = Math.random() * uiCanvas.width;
+            this.y = Math.random() * uiCanvas.height;
+            this.size = Math.random() * 2 + 0.5;
+            this.life = Math.random();
+            this.maxLife = 1.0;
+            this.vx = 0;
+            this.vy = 0;
+            this.history = [];
+        }
+
+        update() {
+            // Update based on mode
+            const mx = state.mouseX * uiCanvas.width;
+            const my = state.mouseY * uiCanvas.height;
+            const dx = mx - this.x;
+            const dy = my - this.y;
+            const dist = Math.sqrt(dx*dx + dy*dy);
+            
+            if (state.mode === 0) { // Borealis
+                this.vx = Math.sin(this.y * 0.01 + state.time * 2) * 2;
+                this.vy = -Math.cos(this.x * 0.01) * 2 - 1;
+                // Mouse repels
+                if (dist < 200) {
+                    this.vx -= (dx / dist) * 2;
+                    this.vy -= (dy / dist) * 2;
+                }
+            } else if (state.mode === 1) { // Solar
+                const cx = uiCanvas.width / 2;
+                const cy = uiCanvas.height;
+                const adx = this.x - cx;
+                const ady = this.y - cy;
+                this.vx = (adx / uiCanvas.height) * 5 + (Math.random()-0.5)*2;
+                this.vy = (ady / uiCanvas.height) * 5 - 4;
+            } else { // Magneto
+                // Orbit around poles
+                const p1x = uiCanvas.width / 2;
+                const p1y = uiCanvas.height * 0.25;
+                const p2x = uiCanvas.width / 2;
+                const p2y = uiCanvas.height * 0.75;
+                
+                const d1x = this.x - p1x, d1y = this.y - p1y;
+                const d2x = this.x - p2x, d2y = this.y - p2y;
+                
+                this.vx = -d1y * 0.01 + d2y * 0.01;
+                this.vy = d1x * 0.01 - d2x * 0.01;
+            }
+
+            this.x += this.vx;
+            this.y += this.vy;
+            
+            this.history.push({x: this.x, y: this.y});
+            if(this.history.length > 15) this.history.shift();
+
+            this.life -= 0.005;
+            if (this.life <= 0 || this.x < 0 || this.x > uiCanvas.width || this.y < 0 || this.y > uiCanvas.height) {
+                this.reset();
+                this.life = 1.0;
+            }
+        }
+
+        draw() {
+            if (this.history.length === 0) return;
+            ctx.beginPath();
+            ctx.moveTo(this.history[0].x, this.history[0].y);
+            for(let i=1; i<this.history.length; i++){
+                ctx.lineTo(this.history[i].x, this.history[i].y);
+            }
+            
+            const alpha = this.life * (Math.abs(this.vx) + Math.abs(this.vy)) * 0.1;
+            ctx.strokeStyle = state.colors[state.mode];
+            ctx.globalAlpha = Math.min(alpha, 0.8);
+            ctx.lineWidth = this.size;
+            ctx.stroke();
+            ctx.globalAlpha = 1.0;
+        }
+    }
+
+    function initParticles() {
+        for(let i=0; i<150; i++) {
+            particles.push(new Particle());
+        }
+    }
+
+    // --- Audio Engine (Procedural Synthesis) ---
+    let audioCtx, masterGain;
+    let padOsc1, padOsc2, padFilter, lfo;
+    let windNoise, windFilter;
+
+    function initAudio() {
+        const AudioContext = window.AudioContext || window.webkitAudioContext;
+        audioCtx = new AudioContext();
+        masterGain = audioCtx.createGain();
+        masterGain.connect(audioCtx.destination);
+        masterGain.gain.value = 0.5;
+
+        // Ethereal Pad
+        padOsc1 = audioCtx.createOscillator();
+        padOsc2 = audioCtx.createOscillator();
+        padOsc1.type = 'sine';
+        padOsc2.type = 'triangle';
+        
+        padFilter = audioCtx.createBiquadFilter();
+        padFilter.type = 'lowpass';
+        padFilter.Q.value = 2;
+
+        lfo = audioCtx.createOscillator();
+        lfo.type = 'sine';
+        lfo.frequency.value = 0.1;
+        const lfoGain = audioCtx.createGain();
+        lfoGain.gain.value = 200;
+        
+        lfo.connect(lfoGain);
+        lfoGain.connect(padFilter.frequency);
+
+        padOsc1.connect(padFilter);
+        padOsc2.connect(padFilter);
+        
+        const padAmp = audioCtx.createGain();
+        padAmp.gain.value = 0.3;
+        padFilter.connect(padAmp);
+        padAmp.connect(masterGain);
+
+        // Wind Noise
+        const bufferSize = audioCtx.sampleRate * 2;
+        const noiseBuffer = audioCtx.createBuffer(1, bufferSize, audioCtx.sampleRate);
+        const output = noiseBuffer.getChannelData(0);
+        for (let i = 0; i < bufferSize; i++) {
+            output[i] = Math.random() * 2 - 1;
+        }
+
+        windNoise = audioCtx.createBufferSource();
+        windNoise.buffer = noiseBuffer;
+        windNoise.loop = true;
+        
+        windFilter = audioCtx.createBiquadFilter();
+        windFilter.type = 'bandpass';
+        windFilter.Q.value = 1;
+        
+        const windAmp = audioCtx.createGain();
+        windAmp.gain.value = 0.1;
+        
+        windNoise.connect(windFilter);
+        windFilter.connect(windAmp);
+        windAmp.connect(masterGain);
+
+        // Reverb (Simple delay based)
+        const delay = audioCtx.createDelay();
+        delay.delayTime.value = 0.5;
+        const feedback = audioCtx.createGain();
+        feedback.gain.value = 0.4;
+        delay.connect(feedback);
+        feedback.connect(delay);
+        delay.connect(masterGain);
+        padAmp.connect(delay);
+
+        // Start
+        padOsc1.start();
+        padOsc2.start();
+        lfo.start();
+        windNoise.start();
+        
+        updateAudioParams();
+    }
+
+    function updateAudioParams() {
+        if (!audioCtx) return;
+        
+        // Map mode to frequencies
+        const baseFreq = state.mode === 0 ? 110 : (state.mode === 1 ? 55 : 82.4); // A2, A1, E2
+        padOsc1.frequency.setTargetAtTime(baseFreq, audioCtx.currentTime, 0.5);
+        padOsc2.frequency.setTargetAtTime(baseFreq * 1.01, audioCtx.currentTime, 0.5); // Slight detune
+        
+        // Modulate with mouse interaction
+        const intensity = state.fieldStrength;
+        padFilter.frequency.setTargetAtTime(400 + intensity * 800, audioCtx.currentTime, 0.1);
+        windFilter.frequency.setTargetAtTime(200 + intensity * 1000 + state.flowRate * 500, audioCtx.currentTime, 0.2);
+    }
+
+    // --- Interaction & Controls ---
+    function handlePointer(e) {
+        if (!state.initialized) return;
+        let x = e.clientX;
+        let y = e.clientY;
+        if (e.touches && e.touches.length > 0) {
+            x = e.touches[0].clientX;
+            y = e.touches[0].clientY;
+        }
+        
+        if (x !== undefined && y !== undefined) {
+            state.targetMouseX = x / window.innerWidth;
+            state.targetMouseY = y / window.innerHeight;
+        }
+    }
+
+    window.addEventListener('mousemove', handlePointer);
+    window.addEventListener('touchmove', handlePointer, {passive: false});
+
+    document.getElementById('start-overlay').addEventListener('click', () => {
+        document.getElementById('start-overlay').style.opacity = '0';
+        setTimeout(() => {
+            document.getElementById('start-overlay').style.display = 'none';
+        }, 500);
+        
+        state.initialized = true;
+        initWebGL();
+        initParticles();
+        initAudio();
+        requestAnimationFrame(render);
+    });
+
+    window.setMode = function(m) {
+        state.mode = m;
+        document.querySelectorAll('.btn').forEach(btn => btn.classList.remove('active'));
+        const ids = ['btn-borealis', 'btn-solar', 'btn-magneto'];
+        document.getElementById(ids[m]).classList.add('active');
+        
+        document.getElementById('hud-mode').innerText = state.modeNames[m];
+        
+        // Update HUD accent color
+        const hud = document.getElementById('hud');
+        hud.style.color = state.colors[m];
+        hud.style.borderColor = state.colors[m].replace(')', ', 0.2)').replace('rgb', 'rgba');
+        document.documentElement.style.setProperty('--text-color', state.colors[m]);
+        
+        updateAudioParams();
+    };
+
+    window.resetSim = function() {
+        state.targetMouseX = 0.5;
+        state.targetMouseY = 0.5;
+        particles.forEach(p => p.reset());
+    };
+
+    window.toggleMute = function() {
+        state.muted = !state.muted;
+        const btn = document.getElementById('btn-mute');
+        if (state.muted) {
+            if (audioCtx) masterGain.gain.value = 0;
+            btn.classList.add('muted');
+            btn.innerText = 'Muted ○';
+        } else {
+            if (audioCtx) masterGain.gain.value = 0.5;
+            btn.classList.remove('muted');
+            btn.innerText = 'Mute ●';
+        }
+    };
+
+    // --- Main Loop ---
+    let lastTime = 0;
+    function render(time) {
+        const dt = (time - lastTime) * 0.001;
+        lastTime = time;
+        state.time += dt;
+
+        // Smooth mouse
+        state.mouseX += (state.targetMouseX - state.mouseX) * 0.1;
+        state.mouseY += (state.targetMouseY - state.mouseY) * 0.1;
+
+        // Calculate metrics for HUD
+        const dx = state.targetMouseX - 0.5;
+        const dy = state.targetMouseY - 0.5;
+        state.fieldStrength = Math.min(1.0, Math.sqrt(dx*dx + dy*dy) * 2.0);
+        state.flowRate = Math.abs(Math.sin(state.time * 0.5)) * 0.5 + 0.5 + state.fieldStrength * 0.5;
+
+        // Update HUD
+        document.getElementById('hud-field').innerText = state.fieldStrength.toFixed(2);
+        document.getElementById('hud-flow').innerText = state.flowRate.toFixed(2);
+
+        // Update Audio
+        if (state.initialized && !state.muted && Math.floor(state.time * 10) % 5 === 0) { // Throttle audio param updates
+            updateAudioParams();
+        }
+
+        // Render WebGL
+        if (gl) {
+            gl.useProgram(program);
+            gl.uniform1f(uTimeLocation, state.time);
+            gl.uniform2f(uResLocation, canvas.width, canvas.height);
+            gl.uniform2f(uMouseLocation, state.mouseX, 1.0 - state.mouseY); // Flip Y for WebGL
+            gl.uniform1i(uModeLocation, state.mode);
+            gl.drawArrays(gl.TRIANGLES, 0, 6);
+        }
+
+        // Render Canvas2D Particles
+        ctx.clearRect(0, 0, uiCanvas.width, uiCanvas.height);
+        
+        ctx.globalCompositeOperation = 'lighter';
+        particles.forEach(p => {
+            p.update();
+            p.draw();
+        });
+        ctx.globalCompositeOperation = 'source-over';
+
+        requestAnimationFrame(render);
+    }
+</script>
+</body>
+</html>
