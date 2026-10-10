@@ -1,0 +1,150 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <title>QUANTUM // Superposition Visualizer</title>
+    <style>
+        :root {
+            --glass-bg: rgba(18, 12, 28, 0.75);
+            --glass-border: rgba(180, 100, 255, 0.25);
+            --text-color: #eedaff;
+            --accent: #b862ff;
+        }
+        * { box-sizing: border-box; margin: 0; padding: 0; user-select: none; }
+        body, html { width: 100%; height: 100%; overflow: hidden; background: #06020a; font-family: 'Courier New', Courier, monospace; cursor: crosshair; color: var(--text-color); }
+        canvas { display: block; width: 100%; height: 100%; }
+        #hud { position: absolute; top: 24px; left: 24px; pointer-events: none; font-size: 13px; line-height: 1.6; z-index: 10; text-shadow: 0 0 8px rgba(184,98,255,0.4); }
+        .hud-title { font-size: 17px; font-weight: bold; letter-spacing: 2px; color: #fff; margin-bottom: 8px; }
+        .hud-stat { display: flex; gap: 8px; }
+        .hud-label { color: #875c9f; }
+        .hud-val { color: #fff; font-weight: bold; }
+        #dock {
+            position: absolute; bottom: 28px; left: 50%; transform: translateX(-50%); display: flex; gap: 10px;
+            padding: 8px 18px; background: var(--glass-bg); border: 1px solid var(--glass-border); border-radius: 100px;
+            backdrop-filter: blur(14px); z-index: 20; box-shadow: 0 8px 32px rgba(0,0,0,0.8);
+        }
+        .btn {
+            background: transparent; border: 1px solid transparent; color: var(--text-color); font-family: inherit;
+            font-size: 11px; padding: 8px 15px; border-radius: 50px; cursor: pointer; transition: all 0.25s ease;
+            text-transform: uppercase; letter-spacing: 1px;
+        }
+        .btn:hover { border-color: var(--accent); color: #fff; box-shadow: 0 0 10px rgba(184,98,255,0.3) inset; }
+        .btn.active { background: rgba(184,98,255,0.15); border-color: var(--accent); color: var(--accent); font-weight: bold; }
+        #overlay {
+            position: absolute; top: 0; left: 0; right: 0; bottom: 0; background: rgba(6, 2, 10, 0.92);
+            display: flex; flex-direction: column; justify-content: center; align-items: center; color: #fff;
+            z-index: 100; cursor: pointer; gap: 12px; transition: opacity 0.4s ease;
+        }
+        #overlay.hidden { opacity: 0; pointer-events: none; }
+    </style>
+</head>
+<body>
+    <div id="overlay">
+        <div style="font-size: 20px; letter-spacing: 5px; font-weight: bold; color: var(--accent); text-shadow: 0 0 15px rgba(184,98,255,0.6);">QUANTUM // SUPERPOSITION VISUALIZER</div>
+        <div style="font-size: 11px; letter-spacing: 2px; color: #875c9f; text-transform: uppercase;">Click to collapse wave-function probability density</div>
+    </div>
+    <canvas id="canvas"></canvas>
+    <div id="hud">
+        <div class="hud-title">QUANTUM // SCHRÖDINGER DYNAMICS</div>
+        <div class="hud-stat"><span class="hud-label">STATE:</span><span class="hud-val" id="mode-val">|Ψ⟩ SUPERPOSITION WAVE</span></div>
+        <div class="hud-stat"><span class="hud-label">PROBABILITY DENSITY:</span><span class="hud-val">|Ψ(x)|² INTEGRAL</span></div>
+        <div class="hud-stat"><span class="hud-label">PLANCK CONSTANT:</span><span class="hud-val">ℏ = 1.05457×10⁻³⁴ J·s</span></div>
+    </div>
+    <div id="dock">
+        <button class="btn active" id="btn-m0" onclick="setMode(0)">● Superposition</button>
+        <button class="btn" id="btn-m1" onclick="setMode(1)">○ Quantum Tunneling</button>
+        <button class="btn" id="btn-m2" onclick="setMode(2)">○ Double-Slit</button>
+        <button class="btn" onclick="collapseState()">Collapse |Ψ⟩</button>
+        <button class="btn" id="btn-mute" onclick="toggleAudio()">Mute: OFF</button>
+    </div>
+    <script>
+        const canvas = document.getElementById('canvas');
+        const ctx = canvas.getContext('2d');
+        let width, height;
+        function resize() { width = canvas.width = window.innerWidth; height = canvas.height = window.innerHeight; }
+        window.addEventListener('resize', resize); resize();
+
+        let audioCtx = null, isMuted = false, masterGain = null, etherOsc = null;
+        function initAudio() {
+            if (audioCtx) return;
+            try {
+                audioCtx = new (window.AudioContext || window.webkitAudioContext)();
+                masterGain = audioCtx.createGain(); masterGain.gain.setValueAtTime(0.18, audioCtx.currentTime);
+                etherOsc = audioCtx.createOscillator(); etherOsc.type = 'sine'; etherOsc.frequency.setValueAtTime(144, audioCtx.currentTime);
+                etherOsc.connect(masterGain); masterGain.connect(audioCtx.destination); etherOsc.start();
+            } catch(e) {}
+        }
+        function toggleAudio() {
+            isMuted = !isMuted;
+            if (masterGain && audioCtx) masterGain.gain.setValueAtTime(isMuted ? 0 : 0.18, audioCtx.currentTime);
+            document.getElementById('btn-mute').textContent = isMuted ? 'Mute: ON' : 'Mute: OFF';
+        }
+
+        let currentMode = 0;
+        let isCollapsed = false;
+        function collapseState() {
+            isCollapsed = true;
+            setTimeout(() => { isCollapsed = false; }, 1800);
+            if (audioCtx && etherOsc) etherOsc.frequency.setValueAtTime(432, audioCtx.currentTime);
+        }
+
+        function setMode(m) {
+            currentMode = m;
+            document.querySelectorAll('#dock .btn').forEach((b, idx) => {
+                if (idx < 3) {
+                    b.classList.toggle('active', idx === m);
+                    b.textContent = (idx === m ? '● ' : '○ ') + ['Superposition', 'Quantum Tunneling', 'Double-Slit'][idx];
+                }
+            });
+            document.getElementById('mode-val').textContent = ['|Ψ⟩ SUPERPOSITION WAVE', 'BARRIER TUNNELING EVANESCENT', 'DOUBLE-SLIT INTERFERENCE'][m];
+        }
+
+        window.addEventListener('pointerdown', () => { initAudio(); document.getElementById('overlay').classList.add('hidden'); collapseState(); });
+
+        function render(now) {
+            const t = now * 0.002;
+            ctx.fillStyle = 'rgba(6, 2, 10, 0.28)';
+            ctx.fillRect(0, 0, width, height);
+
+            const cy = height / 2;
+            ctx.lineWidth = 2.2;
+
+            if (isCollapsed) {
+                ctx.beginPath();
+                ctx.arc(width / 2, cy, 14, 0, Math.PI * 2);
+                ctx.fillStyle = '#ffffff';
+                ctx.shadowColor = '#b862ff';
+                ctx.shadowBlur = 35;
+                ctx.fill();
+                ctx.shadowBlur = 0;
+            } else {
+                for (let k = 0; k < 6; k++) {
+                    ctx.beginPath();
+                    const phase = t * 2 + k * 0.45;
+                    for (let x = 0; x < width; x += 4) {
+                        const envelope = Math.exp(-Math.pow((x - width / 2) / (width * 0.28), 2));
+                        let yOffset = 0;
+                        if (currentMode === 0) {
+                            yOffset = Math.sin(x * 0.03 + phase) * Math.cos(x * 0.015 - phase * 0.6) * 110 * envelope;
+                        } else if (currentMode === 1) {
+                            const barrier = x > width * 0.55 ? 0.25 : 1.0;
+                            yOffset = Math.sin(x * 0.04 - phase * 1.5) * 80 * envelope * barrier;
+                        } else {
+                            const r1 = Math.hypot(x - width * 0.4, cy);
+                            const r2 = Math.hypot(x - width * 0.6, cy);
+                            yOffset = (Math.sin(r1 * 0.08 - phase) + Math.sin(r2 * 0.08 - phase)) * 55 * envelope;
+                        }
+                        if (x === 0) ctx.moveTo(x, cy + yOffset); else ctx.lineTo(x, cy + yOffset);
+                    }
+                    ctx.strokeStyle = `rgba(184, 98, 255, ${0.8 - k * 0.12})`;
+                    ctx.stroke();
+                }
+            }
+
+            requestAnimationFrame(render);
+        }
+        requestAnimationFrame(render);
+    </script>
+</body>
+</html>
