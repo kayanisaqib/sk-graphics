@@ -1,0 +1,628 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <title>TESSERA // Geometric Fractal Matrix</title>
+    <style>
+        :root {
+            --bg: #000000;
+            --fg: #ffffff;
+            --glass: rgba(15, 15, 18, 0.7);
+            --glass-border: rgba(255, 255, 255, 0.1);
+            --accent: #00f0ff;
+        }
+        * { box-sizing: border-box; margin: 0; padding: 0; }
+        body, html {
+            width: 100%; height: 100%;
+            background-color: var(--bg); color: var(--fg);
+            font-family: 'Courier New', Courier, monospace;
+            overflow: hidden; touch-action: none; user-select: none;
+            cursor: crosshair;
+        }
+        canvas {
+            display: block; width: 100%; height: 100%;
+        }
+        #hud {
+            position: absolute; top: 20px; left: 20px;
+            pointer-events: none; text-shadow: 0 1px 4px rgba(0,0,0,0.9);
+            font-size: 13px; line-height: 1.8; letter-spacing: 1px;
+            z-index: 10;
+        }
+        .hud-item { margin-bottom: 4px; display: flex; }
+        .hud-label { color: var(--accent); font-weight: bold; width: 100px; }
+        
+        #dock {
+            position: absolute; bottom: 30px; left: 50%;
+            transform: translateX(-50%);
+            display: flex; gap: 8px; padding: 10px 20px;
+            background: var(--glass);
+            backdrop-filter: blur(16px); -webkit-backdrop-filter: blur(16px);
+            border: 1px solid var(--glass-border);
+            border-radius: 100px;
+            box-shadow: 0 10px 40px rgba(0,0,0,0.8);
+            z-index: 10;
+        }
+        button {
+            background: transparent; color: rgba(255,255,255,0.7);
+            border: 1px solid transparent; border-radius: 50px;
+            padding: 8px 16px; font-family: inherit; font-size: 12px;
+            cursor: pointer; transition: all 0.25s ease;
+            display: flex; align-items: center; gap: 6px;
+            letter-spacing: 0.5px; outline: none; text-transform: uppercase;
+        }
+        button:hover { 
+            background: rgba(255,255,255,0.08); 
+            color: #fff;
+            border-color: rgba(255,255,255,0.15); 
+        }
+        button.active { 
+            background: rgba(0, 240, 255, 0.1); 
+            border-color: rgba(0, 240, 255, 0.3); 
+            color: var(--accent); 
+        }
+        button .status { font-size: 10px; }
+        
+        #overlay {
+            position: absolute; top: 0; left: 0; width: 100%; height: 100%;
+            background: rgba(0,0,0,0.8); z-index: 100;
+            display: flex; justify-content: center; align-items: center;
+            flex-direction: column; text-align: center; pointer-events: none;
+            transition: opacity 0.5s ease;
+        }
+        h1 { font-weight: normal; letter-spacing: 4px; margin-bottom: 10px; color: var(--accent); }
+        p { opacity: 0.7; font-size: 14px; }
+        
+        @media (max-width: 768px) {
+            #dock {
+                flex-wrap: wrap; justify-content: center;
+                width: 90%; max-width: 400px;
+            }
+            #hud { font-size: 11px; }
+            .hud-label { width: 80px; }
+        }
+    </style>
+</head>
+<body>
+    <div id="overlay">
+        <h1>TESSERA // GFM</h1>
+        <p>Click anywhere to initialize engine</p>
+    </div>
+
+    <canvas id="glcanvas"></canvas>
+    
+    <div id="hud">
+        <div class="hud-item"><div class="hud-label">ENGINE</div>TESSERA FRACTAL MATRIX</div>
+        <div class="hud-item"><div class="hud-label">MODE</div><span id="hud-mode">MANDELBROT</span></div>
+        <div class="hud-item"><div class="hud-label">ZOOM</div><span id="hud-zoom">1.00e+0</span></div>
+        <div class="hud-item"><div class="hud-label">ITERATIONS</div><span id="hud-iter">256</span></div>
+        <div class="hud-item"><div class="hud-label">CENTER</div><span id="hud-coords">0.000000, 0.000000</span></div>
+        <div class="hud-item"><div class="hud-label">JULIA C</div><span id="hud-julia">N/A</span></div>
+    </div>
+
+    <div id="dock">
+        <button id="btn-mandelbrot" class="active"><span class="status">●</span> Mandelbrot</button>
+        <button id="btn-julia"><span class="status">○</span> Julia</button>
+        <button id="btn-burning"><span class="status">○</span> Burning Ship</button>
+        <button id="btn-color">Palette: Ultraviolet</button>
+        <button id="btn-reset">Reset View</button>
+        <button id="btn-mute"><span class="status">○</span> Audio Muted</button>
+    </div>
+
+    <script>
+        /**
+         * TESSERA // Geometric Fractal Matrix
+         * High-performance WebGL procedural fractal rendering engine.
+         */
+
+        // State
+        const state = {
+            mode: 0, // 0: Mandelbrot, 1: Julia, 2: Burning Ship
+            palette: 0, // 0: UV, 1: Inferno, 2: Ocean, 3: Mono
+            zoom: 1.0,
+            targetZoom: 1.0,
+            offsetX: -0.5,
+            offsetY: 0.0,
+            targetOffsetX: -0.5,
+            targetOffsetY: 0.0,
+            juliaX: -0.4,
+            juliaY: 0.6,
+            targetJuliaX: -0.4,
+            targetJuliaY: 0.6,
+            isDragging: false,
+            lastMouseX: 0,
+            lastMouseY: 0,
+            maxIter: 256,
+            audioEnabled: false,
+            audioInitialized: false,
+            time: 0,
+            width: window.innerWidth,
+            height: window.innerHeight
+        };
+
+        const PALETTES = ['Ultraviolet', 'Inferno', 'Ocean', 'Monochrome'];
+        const MODES = ['MANDELBROT', 'JULIA', 'BURNING SHIP'];
+
+        // WebGL Setup
+        const canvas = document.getElementById('glcanvas');
+        const gl = canvas.getContext('webgl') || canvas.getContext('experimental-webgl');
+        
+        if (!gl) {
+            alert('WebGL not supported on this browser.');
+        }
+
+        const vertexShaderSource = `
+            attribute vec2 a_position;
+            varying vec2 v_coord;
+            void main() {
+                v_coord = a_position;
+                gl_Position = vec4(a_position, 0.0, 1.0);
+            }
+        `;
+
+        const fragmentShaderSource = `
+            precision highp float;
+            varying vec2 v_coord;
+            
+            uniform vec2 u_resolution;
+            uniform vec2 u_offset;
+            uniform float u_zoom;
+            uniform int u_mode;
+            uniform vec2 u_julia_c;
+            uniform int u_palette;
+            uniform float u_time;
+            uniform int u_max_iter;
+
+            // Complex math
+            vec2 cSqr(vec2 a) { return vec2(a.x*a.x - a.y*a.y, 2.0*a.x*a.y); }
+            
+            // Color palettes
+            vec3 palette_uv(float t) {
+                vec3 a = vec3(0.5, 0.5, 0.5);
+                vec3 b = vec3(0.5, 0.5, 0.5);
+                vec3 c = vec3(1.0, 1.0, 1.0);
+                vec3 d = vec3(0.3, 0.2, 0.8);
+                return a + b * cos(6.28318 * (c * t + d + u_time * 0.1));
+            }
+            
+            vec3 palette_inferno(float t) {
+                vec3 a = vec3(0.5, 0.2, 0.1);
+                vec3 b = vec3(0.5, 0.4, 0.2);
+                vec3 c = vec3(2.0, 1.0, 1.0);
+                vec3 d = vec3(0.0, 0.2, 0.4);
+                return a + b * cos(6.28318 * (c * t + d));
+            }
+            
+            vec3 palette_ocean(float t) {
+                vec3 a = vec3(0.2, 0.4, 0.6);
+                vec3 b = vec3(0.2, 0.3, 0.4);
+                vec3 c = vec3(1.0, 1.0, 1.0);
+                vec3 d = vec3(0.0, 0.3, 0.6);
+                return a + b * cos(6.28318 * (c * t + d + u_time * 0.05));
+            }
+            
+            vec3 palette_mono(float t) {
+                float v = smoothstep(0.0, 1.0, fract(t * 10.0 + u_time * 0.2));
+                return vec3(v);
+            }
+
+            vec3 getColor(float t) {
+                if (u_palette == 0) return palette_uv(t);
+                if (u_palette == 1) return palette_inferno(t);
+                if (u_palette == 2) return palette_ocean(t);
+                return palette_mono(t);
+            }
+
+            void main() {
+                vec2 uv = (gl_FragCoord.xy - 0.5 * u_resolution.xy) / min(u_resolution.x, u_resolution.y);
+                
+                vec2 z, c;
+                
+                // Map uv to complex plane
+                vec2 pos = uv * (4.0 / u_zoom) + u_offset;
+                
+                if (u_mode == 0) {
+                    // Mandelbrot
+                    z = vec2(0.0);
+                    c = pos;
+                } else if (u_mode == 1) {
+                    // Julia
+                    z = pos;
+                    c = u_julia_c;
+                } else {
+                    // Burning Ship
+                    z = vec2(0.0);
+                    c = vec2(pos.x, -pos.y);
+                }
+
+                float iter = 0.0;
+                float max_iter = float(u_max_iter);
+                
+                // Iteration loop
+                for(int i = 0; i < 1000; i++) {
+                    if(float(i) >= max_iter) break;
+                    
+                    if (u_mode == 2) {
+                        // Burning ship absolute value
+                        z = vec2(abs(z.x), abs(z.y));
+                    }
+                    
+                    z = cSqr(z) + c;
+                    
+                    if (dot(z, z) > 256.0) break;
+                    iter++;
+                }
+
+                // Smooth coloring
+                if (iter < max_iter) {
+                    // Log-log smooth iteration count
+                    float log_zn = log(dot(z,z)) / 2.0;
+                    float nu = log(log_zn / log(2.0)) / log(2.0);
+                    iter = iter + 1.0 - nu;
+                    
+                    float t = iter / max_iter;
+                    // Non-linear color mapping to bring out details
+                    t = pow(t, 0.45); 
+                    
+                    vec3 col = getColor(t * 5.0); // wrap palette
+                    
+                    // Add subtle glow based on distance to max iter
+                    float glow = exp(-iter * 0.05);
+                    col += vec3(0.1, 0.2, 0.4) * glow * (sin(u_time) * 0.5 + 0.5);
+                    
+                    gl_FragColor = vec4(col, 1.0);
+                } else {
+                    // Interior
+                    gl_FragColor = vec4(0.0, 0.0, 0.0, 1.0);
+                }
+            }
+        `;
+
+        function createShader(gl, type, source) {
+            const shader = gl.createShader(type);
+            gl.shaderSource(shader, source);
+            gl.compileShader(shader);
+            if (!gl.getShaderParameter(shader, gl.COMPILE_STATUS)) {
+                console.error(gl.getShaderInfoLog(shader));
+                gl.deleteShader(shader);
+                return null;
+            }
+            return shader;
+        }
+
+        const vShader = createShader(gl, gl.VERTEX_SHADER, vertexShaderSource);
+        const fShader = createShader(gl, gl.FRAGMENT_SHADER, fragmentShaderSource);
+        const program = gl.createProgram();
+        gl.attachShader(program, vShader);
+        gl.attachShader(program, fShader);
+        gl.linkProgram(program);
+
+        const positionBuffer = gl.createBuffer();
+        gl.bindBuffer(gl.ARRAY_BUFFER, positionBuffer);
+        const positions = new Float32Array([ -1, -1, 1, -1, -1, 1, 1, 1 ]);
+        gl.bufferData(gl.ARRAY_BUFFER, positions, gl.STATIC_DRAW);
+
+        const aPosition = gl.getAttribLocation(program, "a_position");
+        gl.enableVertexAttribArray(aPosition);
+        gl.vertexAttribPointer(aPosition, 2, gl.FLOAT, false, 0, 0);
+
+        // Uniforms
+        const uRes = gl.getUniformLocation(program, "u_resolution");
+        const uOff = gl.getUniformLocation(program, "u_offset");
+        const uZoom = gl.getUniformLocation(program, "u_zoom");
+        const uMode = gl.getUniformLocation(program, "u_mode");
+        const uJuliaC = gl.getUniformLocation(program, "u_julia_c");
+        const uPalette = gl.getUniformLocation(program, "u_palette");
+        const uTime = gl.getUniformLocation(program, "u_time");
+        const uMaxIter = gl.getUniformLocation(program, "u_max_iter");
+
+        // Audio Engine (FM Synthesis)
+        let audioCtx, carrierOsc, modOsc, modGain, masterGain, filter;
+        
+        function initAudio() {
+            if (audioCtx) return;
+            const AudioContext = window.AudioContext || window.webkitAudioContext;
+            audioCtx = new AudioContext();
+            
+            // Carrier
+            carrierOsc = audioCtx.createOscillator();
+            carrierOsc.type = 'sine';
+            carrierOsc.frequency.value = 55; // Deep A1
+            
+            // Modulator
+            modOsc = audioCtx.createOscillator();
+            modOsc.type = 'triangle';
+            modOsc.frequency.value = 27.5;
+            
+            modGain = audioCtx.createGain();
+            modGain.gain.value = 100;
+            
+            // Lowpass Filter
+            filter = audioCtx.createBiquadFilter();
+            filter.type = 'lowpass';
+            filter.frequency.value = 200;
+            filter.Q.value = 5;
+            
+            // Master
+            masterGain = audioCtx.createGain();
+            masterGain.gain.value = 0; // Muted by default initially
+            
+            modOsc.connect(modGain);
+            modGain.connect(carrierOsc.frequency);
+            carrierOsc.connect(filter);
+            filter.connect(masterGain);
+            masterGain.connect(audioCtx.destination);
+            
+            carrierOsc.start();
+            modOsc.start();
+            state.audioInitialized = true;
+        }
+
+        function updateAudio() {
+            if (!state.audioEnabled || !state.audioInitialized) {
+                if (masterGain) masterGain.gain.setTargetAtTime(0, audioCtx.currentTime, 0.1);
+                return;
+            }
+            
+            // Smoothly bring up volume
+            masterGain.gain.setTargetAtTime(0.3, audioCtx.currentTime, 0.5);
+            
+            // Zoom depth affects harmonics
+            // Logarithmic mapping of zoom to audio parameters
+            const depth = Math.log10(Math.max(1, state.zoom));
+            
+            const targetModGain = 50 + depth * 150;
+            const targetFilterFreq = 100 + depth * 300;
+            const targetCarrierFreq = 55 + (state.mode === 1 ? 20 : 0); // Shift base freq in Julia mode
+            
+            modGain.gain.setTargetAtTime(targetModGain, audioCtx.currentTime, 0.2);
+            filter.frequency.setTargetAtTime(Math.min(targetFilterFreq, 2000), audioCtx.currentTime, 0.2);
+            carrierOsc.frequency.setTargetAtTime(targetCarrierFreq, audioCtx.currentTime, 0.5);
+        }
+
+        function resize() {
+            canvas.width = window.innerWidth;
+            canvas.height = window.innerHeight;
+            gl.viewport(0, 0, canvas.width, canvas.height);
+            state.width = canvas.width;
+            state.height = canvas.height;
+        }
+        window.addEventListener('resize', resize);
+        resize();
+
+        // Interaction
+        function getComplexCoords(clientX, clientY) {
+            const aspect = state.width / state.height;
+            const minDim = Math.min(state.width, state.height);
+            const ndcX = (clientX / state.width) * 2 - 1;
+            const ndcY = 1 - (clientY / state.height) * 2; // Invert Y
+            
+            const x = ndcX * (state.width / minDim) * (2.0 / state.zoom) + state.offsetX;
+            const y = ndcY * (state.height / minDim) * (2.0 / state.zoom) + state.offsetY;
+            
+            return {x, y};
+        }
+
+        canvas.addEventListener('mousedown', (e) => {
+            state.isDragging = true;
+            state.lastMouseX = e.clientX;
+            state.lastMouseY = e.clientY;
+        });
+
+        window.addEventListener('mouseup', () => {
+            state.isDragging = false;
+        });
+
+        window.addEventListener('mousemove', (e) => {
+            // First interaction unlocks overlay/audio
+            if (document.getElementById('overlay').style.opacity !== '0') {
+                document.getElementById('overlay').style.opacity = '0';
+            }
+
+            if (state.isDragging) {
+                const dx = e.clientX - state.lastMouseX;
+                const dy = e.clientY - state.lastMouseY;
+                const minDim = Math.min(state.width, state.height);
+                
+                // Convert pixel drag to complex plane units
+                const panX = -dx * (4.0 / minDim) / state.targetZoom;
+                const panY = dy * (4.0 / minDim) / state.targetZoom; // Invert Y
+                
+                state.targetOffsetX += panX;
+                state.targetOffsetY += panY;
+                
+                state.lastMouseX = e.clientX;
+                state.lastMouseY = e.clientY;
+            } else if (state.mode === 1) { // Julia mode tracking
+                const coords = getComplexCoords(e.clientX, e.clientY);
+                state.targetJuliaX = coords.x;
+                state.targetJuliaY = coords.y;
+            }
+        });
+
+        canvas.addEventListener('wheel', (e) => {
+            e.preventDefault();
+            const zoomFactor = e.deltaY > 0 ? 0.8 : 1.25;
+            
+            // Zoom towards mouse position
+            const coords = getComplexCoords(e.clientX, e.clientY);
+            
+            state.targetZoom *= zoomFactor;
+            
+            // Adjust offset to keep mouse position invariant
+            // newOffset = mouse - (mouse - oldOffset) / zoomFactor
+            state.targetOffsetX = coords.x - (coords.x - state.targetOffsetX) / zoomFactor;
+            state.targetOffsetY = coords.y - (coords.y - state.targetOffsetY) / zoomFactor;
+            
+        }, { passive: false });
+
+        canvas.addEventListener('dblclick', (e) => {
+            const coords = getComplexCoords(e.clientX, e.clientY);
+            state.targetZoom *= 2.5;
+            state.targetOffsetX = coords.x - (coords.x - state.targetOffsetX) / 2.5;
+            state.targetOffsetY = coords.y - (coords.y - state.targetOffsetY) / 2.5;
+        });
+
+        // Touch support
+        let lastTouchDist = 0;
+        canvas.addEventListener('touchstart', (e) => {
+            if (document.getElementById('overlay').style.opacity !== '0') {
+                document.getElementById('overlay').style.opacity = '0';
+            }
+            if (e.touches.length === 1) {
+                state.isDragging = true;
+                state.lastMouseX = e.touches[0].clientX;
+                state.lastMouseY = e.touches[0].clientY;
+            } else if (e.touches.length === 2) {
+                const dx = e.touches[0].clientX - e.touches[1].clientX;
+                const dy = e.touches[0].clientY - e.touches[1].clientY;
+                lastTouchDist = Math.sqrt(dx*dx + dy*dy);
+            }
+        });
+
+        canvas.addEventListener('touchmove', (e) => {
+            e.preventDefault();
+            if (e.touches.length === 1 && state.isDragging) {
+                const dx = e.touches[0].clientX - state.lastMouseX;
+                const dy = e.touches[0].clientY - state.lastMouseY;
+                const minDim = Math.min(state.width, state.height);
+                const panX = -dx * (4.0 / minDim) / state.targetZoom;
+                const panY = dy * (4.0 / minDim) / state.targetZoom;
+                
+                state.targetOffsetX += panX;
+                state.targetOffsetY += panY;
+                
+                state.lastMouseX = e.touches[0].clientX;
+                state.lastMouseY = e.touches[0].clientY;
+            } else if (e.touches.length === 2) {
+                const dx = e.touches[0].clientX - e.touches[1].clientX;
+                const dy = e.touches[0].clientY - e.touches[1].clientY;
+                const dist = Math.sqrt(dx*dx + dy*dy);
+                
+                if (lastTouchDist > 0) {
+                    const zoomFactor = dist / lastTouchDist;
+                    const cx = (e.touches[0].clientX + e.touches[1].clientX) / 2;
+                    const cy = (e.touches[0].clientY + e.touches[1].clientY) / 2;
+                    
+                    const coords = getComplexCoords(cx, cy);
+                    state.targetZoom *= zoomFactor;
+                    state.targetOffsetX = coords.x - (coords.x - state.targetOffsetX) / zoomFactor;
+                    state.targetOffsetY = coords.y - (coords.y - state.targetOffsetY) / zoomFactor;
+                }
+                lastTouchDist = dist;
+            }
+        }, { passive: false });
+
+        canvas.addEventListener('touchend', () => {
+            state.isDragging = false;
+            lastTouchDist = 0;
+        });
+
+        // UI Controls
+        function updateActiveButton(id) {
+            ['btn-mandelbrot', 'btn-julia', 'btn-burning'].forEach(btn => {
+                const el = document.getElementById(btn);
+                if (btn === id) {
+                    el.classList.add('active');
+                    el.querySelector('.status').innerText = '●';
+                } else {
+                    el.classList.remove('active');
+                    el.querySelector('.status').innerText = '○';
+                }
+            });
+        }
+
+        document.getElementById('btn-mandelbrot').addEventListener('click', () => {
+            state.mode = 0; updateActiveButton('btn-mandelbrot');
+        });
+        document.getElementById('btn-julia').addEventListener('click', () => {
+            state.mode = 1; updateActiveButton('btn-julia');
+            // Reset to center for Julia
+            state.targetZoom = 1.0; state.targetOffsetX = 0; state.targetOffsetY = 0;
+        });
+        document.getElementById('btn-burning').addEventListener('click', () => {
+            state.mode = 2; updateActiveButton('btn-burning');
+            state.targetZoom = 1.0; state.targetOffsetX = -0.5; state.targetOffsetY = 0;
+        });
+
+        document.getElementById('btn-color').addEventListener('click', () => {
+            state.palette = (state.palette + 1) % 4;
+            document.getElementById('btn-color').innerText = `Palette: ${PALETTES[state.palette]}`;
+        });
+
+        document.getElementById('btn-reset').addEventListener('click', () => {
+            state.targetZoom = 1.0;
+            state.targetOffsetX = state.mode === 2 ? -0.5 : (state.mode === 0 ? -0.5 : 0);
+            state.targetOffsetY = 0.0;
+        });
+
+        document.getElementById('btn-mute').addEventListener('click', () => {
+            if (!state.audioInitialized) initAudio();
+            state.audioEnabled = !state.audioEnabled;
+            const btn = document.getElementById('btn-mute');
+            if (state.audioEnabled) {
+                btn.classList.add('active');
+                btn.innerHTML = '<span class="status">●</span> Audio Active';
+            } else {
+                btn.classList.remove('active');
+                btn.innerHTML = '<span class="status">○</span> Audio Muted';
+            }
+        });
+
+        // Engine Loop
+        function render(now) {
+            state.time = now * 0.001;
+
+            // Interpolate values for smooth movement/zooming
+            const lerp = (a, b, t) => a + (b - a) * t;
+            state.zoom = lerp(state.zoom, state.targetZoom, 0.1);
+            state.offsetX = lerp(state.offsetX, state.targetOffsetX, 0.1);
+            state.offsetY = lerp(state.offsetY, state.targetOffsetY, 0.1);
+            state.juliaX = lerp(state.juliaX, state.targetJuliaX, 0.05);
+            state.juliaY = lerp(state.juliaY, state.targetJuliaY, 0.05);
+
+            // Dynamic max iterations based on zoom
+            // Deeper zoom needs more iterations to resolve details
+            state.maxIter = Math.min(2000, Math.floor(256 + Math.log10(Math.max(1, state.zoom)) * 150));
+
+            // Update Audio
+            updateAudio();
+
+            // Update HUD
+            document.getElementById('hud-mode').innerText = MODES[state.mode];
+            document.getElementById('hud-zoom').innerText = state.zoom.toExponential(2);
+            document.getElementById('hud-iter').innerText = state.maxIter;
+            document.getElementById('hud-coords').innerText = `${state.offsetX.toFixed(6)}, ${state.offsetY.toFixed(6)}`;
+            document.getElementById('hud-julia').innerText = state.mode === 1 ? `${state.juliaX.toFixed(4)}, ${state.juliaY.toFixed(4)}` : 'N/A';
+
+            // Render WebGL
+            gl.useProgram(program);
+            
+            gl.uniform2f(uRes, canvas.width, canvas.height);
+            gl.uniform2f(uOff, state.offsetX, state.offsetY);
+            gl.uniform1f(uZoom, state.zoom);
+            gl.uniform1i(uMode, state.mode);
+            gl.uniform2f(uJuliaC, state.juliaX, state.juliaY);
+            gl.uniform1i(uPalette, state.palette);
+            gl.uniform1f(uTime, state.time);
+            gl.uniform1i(uMaxIter, state.maxIter);
+
+            gl.drawArrays(gl.TRIANGLE_STRIP, 0, 4);
+
+            requestAnimationFrame(render);
+        }
+
+        // Initialize user interaction overlay removal
+        document.addEventListener('click', () => {
+            const overlay = document.getElementById('overlay');
+            if (overlay.style.opacity !== '0') {
+                overlay.style.opacity = '0';
+                setTimeout(() => overlay.style.display = 'none', 500);
+            }
+        }, {once: true});
+
+        // Start
+        requestAnimationFrame(render);
+    </script>
+</body>
+</html>
