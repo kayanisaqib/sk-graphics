@@ -1,4 +1,4 @@
-name: Auto-Publish Content
+name: Auto-Publish Content & Search Engine Ping
 
 # Runs every Wednesday and Saturday at 8:30 AM UTC (1:30 PM PKT)
 on:
@@ -39,5 +39,13 @@ jobs:
           git config user.name "SK Graphics Bot"
           git config user.email "bot@skgraphics.site"
           git add -A
-          git commit -m "📦 Auto-publish: New content deployed $(date -u '+%Y-%m-%d %H:%M UTC')"
+          git commit -m "📦 Auto-publish: New engine deployed $(date -u '+%Y-%m-%d %H:%M UTC')"
           git push
+
+      - name: Autonomous Search Engine Indexing Ping
+        if: steps.check.outputs.changed == 'true'
+        run: |
+          echo "Pinging Google and Bing with updated sitemap..."
+          curl -s "https://www.google.com/ping?sitemap=https://skgraphics.site/sitemap.xml" || true
+          curl -s "https://www.bing.com/ping?sitemap=https://skgraphics.site/sitemap.xml" || true
+          echo "Search engines successfully pinged!"
