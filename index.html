@@ -4,31 +4,41 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     
-   <head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    
     <!-- Primary SEO Meta Tags -->
     <title>SK Graphics | Interactive WebGL & 3D Canvas Studio</title>
     <meta name="title" content="SK Graphics | Interactive WebGL & 3D Canvas Studio">
     <meta name="description" content="SK Graphics portfolio: High-performance interactive 3D web environments, custom GLSL shader engines, and downloadable HTML5 canvas digital assets.">
     <meta name="robots" content="index, follow">
     <meta name="author" content="SK Graphics">
+    <meta name="keywords" content="WebGL, GLSL shaders, 3D web, interactive canvas, HTML5 graphics, creative coding, shader art, Three.js, procedural graphics, SK Graphics">
     
-    <!-- Canonical URL (Google ko batata hai k yehi original page hai) -->
+    <!-- Canonical URL -->
     <link rel="canonical" href="https://skgraphics.site/">
+    
+    <!-- Favicon -->
+    <link rel="icon" type="image/svg+xml" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><rect fill='%23050505' width='100' height='100' rx='12'/><text x='50' y='68' font-family='serif' font-size='52' font-weight='700' fill='white' text-anchor='middle'>SK</text></svg>">
     
     <!-- Open Graph / Facebook / WhatsApp Preview -->
     <meta property="og:type" content="website">
     <meta property="og:url" content="https://skgraphics.site/">
     <meta property="og:title" content="SK Graphics | Interactive WebGL & 3D Canvas Studio">
     <meta property="og:description" content="High-performance interactive 3D web environments and custom GLSL shader assets by SK Graphics.">
+    <meta property="og:image" content="https://skgraphics.site/og-preview.png">
+    <meta property="og:image:width" content="1200">
+    <meta property="og:image:height" content="630">
     
+    <!-- Twitter Card -->
+    <meta name="twitter:card" content="summary_large_image">
+    <meta name="twitter:title" content="SK Graphics | Interactive WebGL & 3D Canvas Studio">
+    <meta name="twitter:description" content="High-performance interactive 3D web environments and custom GLSL shader assets.">
+    <meta name="twitter:image" content="https://skgraphics.site/og-preview.png">
+
     <!-- Google Fonts -->
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
     <link href="https://fonts.googleapis.com/css2?family=Montserrat:wght@300;400;600;700&family=Playfair+Display:wght@600;700&display=swap" rel="stylesheet">
-       <!-- Structured Data for Google (Schema Markup) -->
+    
+    <!-- Structured Data for Google (Schema Markup) -->
     <script type="application/ld+json">
     {
       "@context": "https://schema.org",
@@ -36,7 +46,7 @@
       "name": "SK Graphics",
       "url": "https://skgraphics.site/",
       "description": "Interactive WebGL, custom GLSL shader engines, and HTML5 canvas digital architecture studio.",
-      "knowsAbout": ["WebGL", "HTML5 Canvas", "3D Web Graphics", "GLSL Shaders", "Interactive Digital Design"],
+      "knowsAbout": ["WebGL", "HTML5 Canvas", "3D Web Graphics", "GLSL Shaders", "Interactive Digital Design", "Creative Coding", "Procedural Audio Synthesis"],
       "founder": {
         "@type": "Person",
         "name": "SK Graphics"
@@ -61,6 +71,33 @@
         }
 
         .logo { font-family: 'Playfair Display', serif; font-size: 1.4rem; font-weight: 700; letter-spacing: 2px; }
+        .logo a { color: #ffffff; text-decoration: none; }
+
+        .nav-links {
+            display: flex; gap: 28px; align-items: center;
+        }
+        .nav-links a {
+            color: #888; text-decoration: none; font-size: 0.72rem;
+            letter-spacing: 2px; font-weight: 600; text-transform: uppercase;
+            transition: color 0.3s ease;
+        }
+        .nav-links a:hover { color: #ffffff; }
+        .nav-links a.active { color: #ffffff; }
+
+        /* Mobile nav toggle */
+        .nav-toggle { display: none; background: none; border: none; color: #fff; font-size: 1.4rem; cursor: pointer; }
+
+        @media (max-width: 768px) {
+            nav { padding: 16px 20px; }
+            .nav-links {
+                display: none; position: absolute; top: 100%; left: 0; right: 0;
+                flex-direction: column; background: rgba(5,5,5,0.95);
+                padding: 20px; gap: 18px; border-bottom: 1px solid rgba(255,255,255,0.06);
+                backdrop-filter: blur(15px);
+            }
+            .nav-links.open { display: flex; }
+            .nav-toggle { display: block; }
+        }
 
         .hero {
             position: relative; width: 100%; height: 100vh;
@@ -87,6 +124,16 @@
         }
 
         .gallery-section { padding: 90px 20px; max-width: 1300px; margin: 0 auto; position: relative; z-index: 10; }
+        .section-header {
+            text-align: center; margin-bottom: 50px;
+        }
+        .section-header h2 {
+            font-family: 'Playfair Display', serif; font-size: clamp(1.6rem, 3vw, 2.2rem);
+            letter-spacing: 3px; margin-bottom: 12px;
+        }
+        .section-header p {
+            font-size: 0.88rem; color: #666; font-weight: 300; letter-spacing: 1px;
+        }
         .gallery-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(320px, 1fr)); gap: 35px; }
 
         .gallery-card {
@@ -148,6 +195,7 @@
         .card-meta { display: flex; justify-content: space-between; font-size: 0.72rem; letter-spacing: 1px; color: #777; margin-bottom: 14px; text-transform: uppercase; font-weight: 600; }
         .card-meta span { background: #181818; padding: 4px 8px; border-radius: 4px; }
         .live-tag { background: #00e676 !important; color: #000 !important; font-weight: 700; }
+        .new-tag { background: #6366f1 !important; color: #fff !important; font-weight: 700; }
 
         .card-title { font-size: 1.15rem; font-weight: 700; letter-spacing: 1px; margin: 0 0 12px 0; color: #ffffff; }
         .card-desc { font-size: 0.82rem; color: #8c8c8c; margin: 0 0 22px 0; line-height: 1.6; font-weight: 300; flex-grow: 1; }
@@ -168,12 +216,45 @@
         }
         .lightbox img { max-width: 95%; max-height: 95%; border-radius: 4px; }
         .close-btn { position: absolute; top: 20px; right: 30px; color: white; font-size: 40px; font-weight: 300; cursor: pointer; }
+
+        /* Services section */
+        .services-section {
+            max-width: 1300px; margin: 60px auto; padding: 0 20px;
+            border-top: 1px solid #1c1c1c; padding-top: 60px;
+        }
+        .services-grid {
+            display: grid; grid-template-columns: repeat(auto-fit, minmax(280px, 1fr)); gap: 40px;
+        }
+        .services-grid h3 {
+            font-size: 1.1rem; letter-spacing: 2px; text-transform: uppercase;
+            margin-bottom: 12px; color: #fff;
+        }
+        .services-grid p {
+            font-size: 0.85rem; color: #888; line-height: 1.7;
+        }
+
+        /* Footer */
+        footer {
+            text-align: center; padding: 40px 20px;
+            border-top: 1px solid rgba(255,255,255,0.06);
+            font-size: 0.75rem; color: #666; letter-spacing: 1px;
+        }
+        footer a { color: #888; text-decoration: none; transition: color 0.3s; }
+        footer a:hover { color: #fff; }
+        .footer-links { margin-bottom: 16px; display: flex; gap: 24px; justify-content: center; flex-wrap: wrap; }
     </style>
 </head>
 <body>
 
     <nav>
-        <div class="logo">SK GRAPHICS</div>
+        <div class="logo"><a href="/">SK GRAPHICS</a></div>
+        <button class="nav-toggle" onclick="document.querySelector('.nav-links').classList.toggle('open')" aria-label="Toggle navigation">☰</button>
+        <div class="nav-links">
+            <a href="#home" class="active">Home</a>
+            <a href="#portfolio">Engines</a>
+            <a href="about.html">About</a>
+            <a href="contact.html">Contact</a>
+        </div>
     </nav>
 
     <section class="hero" id="home">
@@ -187,6 +268,10 @@
     </section>
 
     <section class="gallery-section" id="portfolio">
+        <div class="section-header">
+            <h2>Interactive Engine Gallery</h2>
+            <p>Launch any engine to experience it live. Each is a self-contained WebGL/Canvas environment.</p>
+        </div>
         <div class="gallery-grid" id="portfolio-gallery"></div>
     </section>
 
@@ -194,29 +279,36 @@
         <span class="close-btn">&times;</span>
         <img id="lightbox-img" src="" alt="Fullscreen View">
     </div>
-   <!-- Studio Overview & Technical Services (For Crawlers & Clients) -->
-    <section style="max-width: 1300px; margin: 60px auto; padding: 0 20px; border-top: 1px solid #1c1c1c; padding-top: 60px;">
-        <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(280px, 1fr)); gap: 40px;">
+
+    <!-- Studio Overview & Technical Services -->
+    <section class="services-section">
+        <div class="services-grid">
             <div>
-                <h3 style="font-size: 1.1rem; letter-spacing: 2px; text-transform: uppercase; margin-bottom: 12px; color: #fff;">Interactive 3D Web</h3>
-                <p style="font-size: 0.85rem; color: #888; line-height: 1.7;">Custom WebGL environments, three.js canvas animations, and low-latency shader visualizers designed for high-conversion web platforms.</p>
+                <h3>Interactive 3D Web</h3>
+                <p>Custom WebGL environments, three.js canvas animations, and low-latency shader visualizers designed for high-conversion web platforms.</p>
             </div>
             <div>
-                <h3 style="font-size: 1.1rem; letter-spacing: 2px; text-transform: uppercase; margin-bottom: 12px; color: #fff;">Digital Brand Assets</h3>
-                <p style="font-size: 0.85rem; color: #888; line-height: 1.7;">Minimalist visual identities, responsive vector graphics, and high-performance user interface kits tailored for modern creative brands.</p>
+                <h3>Digital Brand Assets</h3>
+                <p>Minimalist visual identities, responsive vector graphics, and high-performance user interface kits tailored for modern creative brands.</p>
             </div>
             <div>
-                <h3 style="font-size: 1.1rem; letter-spacing: 2px; text-transform: uppercase; margin-bottom: 12px; color: #fff;">Source Code Integration</h3>
-                <p style="font-size: 0.85rem; color: #888; line-height: 1.7;">Clean, vanilla HTML5/CSS3/JavaScript architectures with zero bloated dependencies, optimized for speed and SEO standards.</p>
+                <h3>Source Code Integration</h3>
+                <p>Clean, vanilla HTML5/CSS3/JavaScript architectures with zero bloated dependencies, optimized for speed and SEO standards.</p>
             </div>
         </div>
     </section>
 
-    <!-- Semantic Footer -->
-    <footer style="text-align: center; padding: 40px 20px; border-top: 1px solid rgba(255,255,255,0.06); font-size: 0.75rem; color: #666; letter-spacing: 1px;">
+    <!-- Footer -->
+    <footer>
+        <div class="footer-links">
+            <a href="#portfolio">Engines</a>
+            <a href="about.html">About</a>
+            <a href="contact.html">Contact</a>
+        </div>
         <p style="margin: 0 0 10px 0;">&copy; 2026 SK Graphics. All Rights Reserved. Interactive WebGL & Visual Architecture.</p>
         <p style="margin: 0; font-size: 0.7rem; color: #444;">Built with Vanilla HTML5 Canvas, WebGL, and Pure JavaScript.</p>
     </footer>
+
     <script>
         let currentlyActiveEngine = null;
 
@@ -266,6 +358,7 @@
                     const clientText = item.client || 'Premium';
                     const descriptionText = item.description || '';
                     const containerId = `preview-box-${index}`;
+                    const isNew = item.isNew === true;
 
                     let mediaHTML = '';
                     let actionButtonsHTML = '';
@@ -288,6 +381,9 @@
                         `;
                     }
 
+                    const tagClass = isNew ? 'new-tag' : (isInteractive ? 'live-tag' : '');
+                    const tagText = isNew ? '★ NEW' : (isInteractive ? '● GLSL ENGINE' : clientText);
+
                     card.innerHTML = `
                         <div class="preview-container" id="${containerId}">
                             ${mediaHTML}
@@ -295,7 +391,7 @@
                         <div class="card-content">
                             <div class="card-meta">
                                 <span>${categoryText}</span>
-                                <span class="${isInteractive ? 'live-tag' : ''}">${isInteractive ? '● GLSL ENGINE' : clientText}</span>
+                                <span class="${tagClass}">${tagText}</span>
                             </div>
                             <h3 class="card-title">${item.title}</h3>
                             <p class="card-desc">${descriptionText}</p>
@@ -384,6 +480,28 @@
             requestAnimationFrame(animate);
         }
         animate();
+
+        // Smooth scroll for nav links
+        document.querySelectorAll('a[href^="#"]').forEach(anchor => {
+            anchor.addEventListener('click', function(e) {
+                e.preventDefault();
+                const target = document.querySelector(this.getAttribute('href'));
+                if (target) target.scrollIntoView({ behavior: 'smooth' });
+                document.querySelector('.nav-links').classList.remove('open');
+            });
+        });
+
+        // Highlight active nav on scroll
+        const sections = document.querySelectorAll('section[id]');
+        window.addEventListener('scroll', () => {
+            let current = '';
+            sections.forEach(section => {
+                if (window.scrollY >= section.offsetTop - 100) current = section.getAttribute('id');
+            });
+            document.querySelectorAll('.nav-links a').forEach(a => {
+                a.classList.toggle('active', a.getAttribute('href') === `#${current}`);
+            });
+        });
     </script>
 </body>
 </html>
