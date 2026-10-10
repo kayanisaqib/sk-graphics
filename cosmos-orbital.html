@@ -1,0 +1,174 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <title>COSMOS // Orbital Mechanics Lab</title>
+    <style>
+        :root {
+            --glass-bg: rgba(6, 10, 20, 0.75);
+            --glass-border: rgba(140, 180, 255, 0.2);
+            --text-color: #e2eeff;
+            --accent: #58a6ff;
+        }
+        * { box-sizing: border-box; margin: 0; padding: 0; user-select: none; }
+        body, html { width: 100%; height: 100%; overflow: hidden; background: #010206; font-family: 'Courier New', Courier, monospace; cursor: crosshair; color: var(--text-color); }
+        canvas { display: block; width: 100%; height: 100%; }
+        #hud { position: absolute; top: 24px; left: 24px; pointer-events: none; font-size: 13px; line-height: 1.6; z-index: 10; text-shadow: 0 0 8px rgba(88, 166, 255, 0.4); }
+        .hud-title { font-size: 17px; font-weight: bold; letter-spacing: 2px; color: #fff; margin-bottom: 8px; }
+        .hud-stat { display: flex; gap: 8px; }
+        .hud-label { color: #587094; }
+        .hud-val { color: #fff; font-weight: bold; }
+        #dock {
+            position: absolute; bottom: 28px; left: 50%; transform: translateX(-50%); display: flex; gap: 10px;
+            padding: 8px 18px; background: var(--glass-bg); border: 1px solid var(--glass-border); border-radius: 100px;
+            backdrop-filter: blur(14px); z-index: 20; box-shadow: 0 8px 32px rgba(0,0,0,0.8);
+        }
+        .btn {
+            background: transparent; border: 1px solid transparent; color: var(--text-color); font-family: inherit;
+            font-size: 11px; padding: 8px 15px; border-radius: 50px; cursor: pointer; transition: all 0.25s ease;
+            text-transform: uppercase; letter-spacing: 1px;
+        }
+        .btn:hover { border-color: var(--accent); color: #fff; box-shadow: 0 0 10px rgba(88,166,255,0.3) inset; }
+        .btn.active { background: rgba(88,166,255,0.15); border-color: var(--accent); color: var(--accent); font-weight: bold; }
+        #overlay {
+            position: absolute; top: 0; left: 0; right: 0; bottom: 0; background: rgba(1, 2, 6, 0.92);
+            display: flex; flex-direction: column; justify-content: center; align-items: center; color: #fff;
+            z-index: 100; cursor: pointer; gap: 12px; transition: opacity 0.4s ease;
+        }
+        #overlay.hidden { opacity: 0; pointer-events: none; }
+    </style>
+</head>
+<body>
+    <div id="overlay">
+        <div style="font-size: 20px; letter-spacing: 5px; font-weight: bold; color: var(--accent); text-shadow: 0 0 15px rgba(88,166,255,0.6);">COSMOS // ORBITAL MECHANICS LAB</div>
+        <div style="font-size: 11px; letter-spacing: 2px; color: #587094; text-transform: uppercase;">Click to activate gravitational acoustic matrix</div>
+    </div>
+    <canvas id="canvas"></canvas>
+    <div id="hud">
+        <div class="hud-title">COSMOS // N-BODY GRAVITY</div>
+        <div class="hud-stat"><span class="hud-label">SIMULATION:</span><span class="hud-val" id="mode-val">3-BODY CHAOTIC SYSTEM</span></div>
+        <div class="hud-stat"><span class="hud-label">GRAVITATIONAL CONST:</span><span class="hud-val">G = 6.674×10⁻¹¹</span></div>
+        <div class="hud-stat"><span class="hud-label">TRAJECTORIES:</span><span class="hud-val">RUNGE-KUTTA 4</span></div>
+    </div>
+    <div id="dock">
+        <button class="btn active" id="btn-m0" onclick="setMode(0)">● 3-Body</button>
+        <button class="btn" id="btn-m1" onclick="setMode(1)">○ Keplerian Solar</button>
+        <button class="btn" id="btn-m2" onclick="setMode(2)">○ Binary Black Hole</button>
+        <button class="btn" onclick="resetOrbits()">Reset</button>
+        <button class="btn" id="btn-mute" onclick="toggleAudio()">Mute: OFF</button>
+    </div>
+    <script>
+        const canvas = document.getElementById('canvas');
+        const ctx = canvas.getContext('2d');
+        let width, height;
+        function resize() { width = canvas.width = window.innerWidth; height = canvas.height = window.innerHeight; }
+        window.addEventListener('resize', resize); resize();
+
+        let audioCtx = null, isMuted = false, masterGain = null, subOsc = null;
+        function initAudio() {
+            if (audioCtx) return;
+            try {
+                const AudioContext = window.AudioContext || window.webkitAudioContext;
+                audioCtx = new AudioContext();
+                masterGain = audioCtx.createGain(); masterGain.gain.setValueAtTime(0.18, audioCtx.currentTime);
+                subOsc = audioCtx.createOscillator(); subOsc.type = 'sine'; subOsc.frequency.setValueAtTime(65, audioCtx.currentTime);
+                subOsc.connect(masterGain); masterGain.connect(audioCtx.destination);
+                subOsc.start();
+            } catch(e) {}
+        }
+        function toggleAudio() {
+            isMuted = !isMuted;
+            if (masterGain && audioCtx) masterGain.gain.setValueAtTime(isMuted ? 0 : 0.18, audioCtx.currentTime);
+            document.getElementById('btn-mute').textContent = isMuted ? 'Mute: ON' : 'Mute: OFF';
+        }
+
+        let currentMode = 0;
+        let bodies = [];
+        function resetOrbits() {
+            bodies = [];
+            const cx = width / 2, cy = height / 2;
+            if (currentMode === 0) { // 3-body Lagrange
+                bodies.push({ x: cx - 120, y: cy, vx: 0, vy: 1.8, mass: 1200, color: '#00f0ff', trail: [] });
+                bodies.push({ x: cx + 120, y: cy, vx: 0, vy: -1.8, mass: 1200, color: '#ff3366', trail: [] });
+                bodies.push({ x: cx, y: cy - 120, vx: -1.6, vy: 0, mass: 1000, color: '#ffd000', trail: [] });
+            } else if (currentMode === 1) { // Solar
+                bodies.push({ x: cx, y: cy, vx: 0, vy: 0, mass: 4500, color: '#ffffff', trail: [] });
+                for (let i = 1; i <= 5; i++) {
+                    const dist = 70 + i * 55;
+                    const spd = Math.sqrt(4500 * 0.08 / dist);
+                    bodies.push({ x: cx + dist, y: cy, vx: 0, vy: spd, mass: 35, color: '#58a6ff', trail: [] });
+                }
+            } else { // Binary Black Hole
+                bodies.push({ x: cx - 80, y: cy, vx: 0, vy: 2.8, mass: 3000, color: '#9d00ff', trail: [] });
+                bodies.push({ x: cx + 80, y: cy, vx: 0, vy: -2.8, mass: 3000, color: '#ff0055', trail: [] });
+            }
+        }
+        resetOrbits();
+
+        function setMode(m) {
+            currentMode = m;
+            document.querySelectorAll('#dock .btn').forEach((b, idx) => {
+                if (idx < 3) {
+                    b.classList.toggle('active', idx === m);
+                    b.textContent = (idx === m ? '● ' : '○ ') + ['3-Body', 'Keplerian Solar', 'Binary Black Hole'][idx];
+                }
+            });
+            document.getElementById('mode-val').textContent = ['3-BODY CHAOTIC SYSTEM', 'KEPLERIAN MULTI-PLANETARY SYSTEM', 'BINARY COMPACT MERGER'][m];
+            resetOrbits();
+        }
+
+        window.addEventListener('pointerdown', (e) => {
+            initAudio(); document.getElementById('overlay').classList.add('hidden');
+            bodies.push({ x: e.clientX, y: e.clientY, vx: (Math.random() - 0.5) * 3, vy: (Math.random() - 0.5) * 3, mass: 120, color: '#00ff88', trail: [] });
+        });
+
+        function render() {
+            ctx.fillStyle = 'rgba(1, 2, 6, 0.28)';
+            ctx.fillRect(0, 0, width, height);
+
+            const G = 0.08;
+            for (let i = 0; i < bodies.length; i++) {
+                for (let j = i + 1; j < bodies.length; j++) {
+                    const b1 = bodies[i], b2 = bodies[j];
+                    const dx = b2.x - b1.x, dy = b2.y - b1.y;
+                    const distSq = dx * dx + dy * dy + 150;
+                    const dist = Math.sqrt(distSq);
+                    const force = (G * b1.mass * b2.mass) / distSq;
+                    const fx = force * (dx / dist), fy = force * (dy / dist);
+                    b1.vx += fx / b1.mass; b1.vy += fy / b1.mass;
+                    b2.vx -= fx / b2.mass; b2.vy -= fy / b2.mass;
+                }
+            }
+
+            bodies.forEach(b => {
+                b.x += b.vx; b.y += b.vy;
+                b.trail.push({ x: b.x, y: b.y });
+                if (b.trail.length > 70) b.trail.shift();
+
+                ctx.beginPath();
+                for (let k = 0; k < b.trail.length; k++) {
+                    const pt = b.trail[k];
+                    if (k === 0) ctx.moveTo(pt.x, pt.y); else ctx.lineTo(pt.x, pt.y);
+                }
+                ctx.strokeStyle = b.color;
+                ctx.globalAlpha = 0.4;
+                ctx.lineWidth = 1.2;
+                ctx.stroke();
+                ctx.globalAlpha = 1.0;
+
+                ctx.beginPath();
+                ctx.arc(b.x, b.y, Math.max(3, Math.min(18, Math.sqrt(b.mass) * 0.4)), 0, Math.PI * 2);
+                ctx.fillStyle = b.color;
+                ctx.shadowColor = b.color;
+                ctx.shadowBlur = 12;
+                ctx.fill();
+                ctx.shadowBlur = 0;
+            });
+
+            requestAnimationFrame(render);
+        }
+        requestAnimationFrame(render);
+    </script>
+</body>
+</html>
