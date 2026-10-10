@@ -1,0 +1,186 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <title>ENTROPY // Cellular Automata Matrix</title>
+    <style>
+        :root {
+            --glass-bg: rgba(14, 18, 14, 0.75);
+            --glass-border: rgba(0, 255, 136, 0.25);
+            --text-color: #d2fed2;
+            --accent: #00ff88;
+        }
+        * { box-sizing: border-box; margin: 0; padding: 0; user-select: none; }
+        body, html { width: 100%; height: 100%; overflow: hidden; background: #030804; font-family: 'Courier New', Courier, monospace; cursor: crosshair; color: var(--text-color); }
+        canvas { display: block; width: 100%; height: 100%; image-rendering: pixelated; }
+        #hud { position: absolute; top: 24px; left: 24px; pointer-events: none; font-size: 13px; line-height: 1.6; z-index: 10; text-shadow: 0 0 8px rgba(0,255,136,0.4); }
+        .hud-title { font-size: 17px; font-weight: bold; letter-spacing: 2px; color: #fff; margin-bottom: 8px; }
+        .hud-stat { display: flex; gap: 8px; }
+        .hud-label { color: #588e58; }
+        .hud-val { color: #fff; font-weight: bold; }
+        #dock {
+            position: absolute; bottom: 28px; left: 50%; transform: translateX(-50%); display: flex; gap: 10px;
+            padding: 8px 18px; background: var(--glass-bg); border: 1px solid var(--glass-border); border-radius: 100px;
+            backdrop-filter: blur(14px); z-index: 20; box-shadow: 0 8px 32px rgba(0,0,0,0.8);
+        }
+        .btn {
+            background: transparent; border: 1px solid transparent; color: var(--text-color); font-family: inherit;
+            font-size: 11px; padding: 8px 15px; border-radius: 50px; cursor: pointer; transition: all 0.25s ease;
+            text-transform: uppercase; letter-spacing: 1px;
+        }
+        .btn:hover { border-color: var(--accent); color: #fff; box-shadow: 0 0 10px rgba(0,255,136,0.3) inset; }
+        .btn.active { background: rgba(0,255,136,0.15); border-color: var(--accent); color: var(--accent); font-weight: bold; }
+        #overlay {
+            position: absolute; top: 0; left: 0; right: 0; bottom: 0; background: rgba(2, 6, 2, 0.92);
+            display: flex; flex-direction: column; justify-content: center; align-items: center; color: #fff;
+            z-index: 100; cursor: pointer; gap: 12px; transition: opacity 0.4s ease;
+        }
+        #overlay.hidden { opacity: 0; pointer-events: none; }
+    </style>
+</head>
+<body>
+    <div id="overlay">
+        <div style="font-size: 20px; letter-spacing: 5px; font-weight: bold; color: var(--accent); text-shadow: 0 0 15px rgba(0,255,136,0.6);">ENTROPY // CELLULAR AUTOMATA MATRIX</div>
+        <div style="font-size: 11px; letter-spacing: 2px; color: #588e58; text-transform: uppercase;">Click anywhere to awaken emergent biomorphic matrix</div>
+    </div>
+    <canvas id="canvas"></canvas>
+    <div id="hud">
+        <div class="hud-title">ENTROPY // EMERGENT CELLULAR SYSTEM</div>
+        <div class="hud-stat"><span class="hud-label">RULESET:</span><span class="hud-val" id="mode-val">CONWAY B3/S23 (ORGANIC LIFE)</span></div>
+        <div class="hud-stat"><span class="hud-label">GENERATION:</span><span class="hud-val" id="gen-val">0</span></div>
+        <div class="hud-stat"><span class="hud-label">DENSITY:</span><span class="hud-val" id="dens-val">24.2%</span></div>
+    </div>
+    <div id="dock">
+        <button class="btn active" id="btn-m0" onclick="setMode(0)">● Conway Life</button>
+        <button class="btn" id="btn-m1" onclick="setMode(1)">○ HighLife (Replicating)</button>
+        <button class="btn" id="btn-m2" onclick="setMode(2)">○ Seeds Chaos</button>
+        <button class="btn" onclick="randomizeGrid()">Randomize</button>
+        <button class="btn" id="btn-mute" onclick="toggleAudio()">Mute: OFF</button>
+    </div>
+    <script>
+        const canvas = document.getElementById('canvas');
+        const ctx = canvas.getContext('2d');
+        const COLS = 160, ROWS = 90;
+        let cellW, cellH;
+        function resize() {
+            canvas.width = window.innerWidth; canvas.height = window.innerHeight;
+            cellW = canvas.width / COLS; cellH = canvas.height / ROWS;
+        }
+        window.addEventListener('resize', resize); resize();
+
+        let audioCtx = null, isMuted = false, masterGain = null;
+        function initAudio() {
+            if (audioCtx) return;
+            try {
+                audioCtx = new (window.AudioContext || window.webkitAudioContext)();
+                masterGain = audioCtx.createGain(); masterGain.gain.setValueAtTime(0.15, audioCtx.currentTime);
+                masterGain.connect(audioCtx.destination);
+            } catch(e) {}
+        }
+        function triggerBeep(freq = 440) {
+            if (!audioCtx || isMuted) return;
+            try {
+                const osc = audioCtx.createOscillator(); const g = audioCtx.createGain();
+                osc.type = 'triangle'; osc.frequency.setValueAtTime(freq, audioCtx.currentTime);
+                g.gain.setValueAtTime(0.04, audioCtx.currentTime);
+                g.gain.exponentialRampToValueAtTime(0.0001, audioCtx.currentTime + 0.12);
+                osc.connect(g); g.connect(masterGain); osc.start(); osc.stop(audioCtx.currentTime + 0.12);
+            } catch(e) {}
+        }
+        function toggleAudio() {
+            isMuted = !isMuted;
+            if (masterGain && audioCtx) masterGain.gain.setValueAtTime(isMuted ? 0 : 0.15, audioCtx.currentTime);
+            document.getElementById('btn-mute').textContent = isMuted ? 'Mute: ON' : 'Mute: OFF';
+        }
+
+        let grid = new Uint8Array(COLS * ROWS);
+        let nextGrid = new Uint8Array(COLS * ROWS);
+        let currentMode = 0, gen = 0;
+
+        function randomizeGrid() {
+            gen = 0;
+            for (let i = 0; i < grid.length; i++) grid[i] = Math.random() < 0.22 ? 1 : 0;
+            triggerBeep(330);
+        }
+        randomizeGrid();
+
+        function setMode(m) {
+            currentMode = m;
+            document.querySelectorAll('#dock .btn').forEach((b, idx) => {
+                if (idx < 3) {
+                    b.classList.toggle('active', idx === m);
+                    b.textContent = (idx === m ? '● ' : '○ ') + ['Conway Life', 'HighLife', 'Seeds Chaos'][idx];
+                }
+            });
+            document.getElementById('mode-val').textContent = ['CONWAY B3/S23 (ORGANIC LIFE)', 'HIGHLIFE B36/S23 (REPLICATOR)', 'SEEDS B2/S (EXPLOSIVE PURITY)'][m];
+            randomizeGrid();
+        }
+
+        window.addEventListener('pointerdown', (e) => {
+            initAudio(); document.getElementById('overlay').classList.add('hidden');
+            const c = Math.floor(e.clientX / cellW), r = Math.floor(e.clientY / cellH);
+            for (let dc = -2; dc <= 2; dc++) {
+                for (let dr = -2; dr <= 2; dr++) {
+                    const nc = (c + dc + COLS) % COLS, nr = (r + dr + ROWS) % ROWS;
+                    grid[nr * COLS + nc] = 1;
+                }
+            }
+            triggerBeep(520);
+        });
+
+        let lastStep = 0;
+        function update(now) {
+            if (now - lastStep > 40) {
+                lastStep = now;
+                gen++;
+                let aliveCount = 0;
+                for (let r = 0; r < ROWS; r++) {
+                    for (let c = 0; c < COLS; c++) {
+                        let neighbors = 0;
+                        for (let dr = -1; dr <= 1; dr++) {
+                            for (let dc = -1; dc <= 1; dc++) {
+                                if (dr === 0 && dc === 0) continue;
+                                const nr = (r + dr + ROWS) % ROWS;
+                                const nc = (c + dc + COLS) % COLS;
+                                neighbors += grid[nr * COLS + nc];
+                            }
+                        }
+                        const idx = r * COLS + c;
+                        const state = grid[idx];
+                        let nextState = 0;
+                        if (currentMode === 0) { // Conway B3/S23
+                            if (state === 1 && (neighbors === 2 || neighbors === 3)) nextState = 1;
+                            else if (state === 0 && neighbors === 3) nextState = 1;
+                        } else if (currentMode === 1) { // HighLife B36/S23
+                            if (state === 1 && (neighbors === 2 || neighbors === 3)) nextState = 1;
+                            else if (state === 0 && (neighbors === 3 || neighbors === 6)) nextState = 1;
+                        } else { // Seeds B2/S
+                            if (state === 0 && neighbors === 2) nextState = 1;
+                        }
+                        nextGrid[idx] = nextState;
+                        if (nextState) aliveCount++;
+                    }
+                }
+                grid.set(nextGrid);
+                document.getElementById('gen-val').textContent = gen;
+                document.getElementById('dens-val').textContent = ((aliveCount / (COLS * ROWS)) * 100).toFixed(1) + '%';
+            }
+
+            // Draw
+            ctx.fillStyle = '#030804';
+            ctx.fillRect(0, 0, canvas.width, canvas.height);
+            ctx.fillStyle = '#00ff88';
+            for (let r = 0; r < ROWS; r++) {
+                for (let c = 0; c < COLS; c++) {
+                    if (grid[r * COLS + c]) {
+                        ctx.fillRect(c * cellW, r * cellH, cellW - 0.5, cellH - 0.5);
+                    }
+                }
+            }
+            requestAnimationFrame(update);
+        }
+        requestAnimationFrame(update);
+    </script>
+</body>
+</html>
