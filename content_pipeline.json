@@ -1,0 +1,57 @@
+[
+  {
+    "id": "future-01",
+    "title": "HELIX // DNA Strand Synthesizer",
+    "category": "Molecular Visualization",
+    "assetUrl": "./helix-dna.html",
+    "type": "interactive",
+    "description": "Interactive double-helix DNA strand visualization with real-time base pair matching, rotational dynamics, and molecular audio synthesis.",
+    "client": "Production Engine",
+    "scheduledDate": "2026-10-08",
+    "published": false
+  },
+  {
+    "id": "future-02",
+    "title": "FLUX // Electromagnetic Wave Engine",
+    "category": "Wave Physics Simulation",
+    "assetUrl": "./flux-wave.html",
+    "type": "interactive",
+    "description": "Real-time electromagnetic wave propagation simulator with interference patterns, standing waves, and Doppler shift visualization.",
+    "client": "Production Engine",
+    "scheduledDate": "2026-10-11",
+    "published": false
+  },
+  {
+    "id": "future-03",
+    "title": "COSMOS // Orbital Mechanics Lab",
+    "category": "Gravitational N-Body Simulation",
+    "assetUrl": "./cosmos-orbital.html",
+    "type": "interactive",
+    "description": "N-body gravitational simulation with planetary orbits, Lagrange points, slingshot maneuvers, and procedural space ambient synthesis.",
+    "client": "Production Engine",
+    "scheduledDate": "2026-10-15",
+    "published": false
+  },
+  {
+    "id": "future-04",
+    "title": "ENTROPY // Cellular Automata Matrix",
+    "category": "Emergent Complexity Engine",
+    "assetUrl": "./entropy-automata.html",
+    "type": "interactive",
+    "description": "Cellular automata playground with Conway's Game of Life, Wireworld, and Langton's Ant. Emergent complexity from simple rules.",
+    "client": "Production Engine",
+    "scheduledDate": "2026-10-18",
+    "published": false
+  },
+  {
+    "id": "future-05",
+    "title": "QUANTUM // Superposition Visualizer",
+    "category": "Quantum Mechanics Simulation",
+    "assetUrl": "./quantum-superposition.html",
+    "type": "interactive",
+    "description": "Quantum wavefunction visualizer showing probability densities, superposition states, tunnel effect, and double-slit diffraction patterns.",
+    "client": "Production Engine",
+    "scheduledDate": "2026-10-22",
+    "published": false
+  }
+]
