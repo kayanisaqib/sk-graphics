@@ -1,0 +1,281 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Contact | SK Graphics — Interactive WebGL & 3D Canvas Studio</title>
+    <meta name="description" content="Get in touch with SK Graphics for custom WebGL environments, GLSL shader engines, and interactive digital experiences.">
+    <meta name="robots" content="index, follow">
+    <link rel="canonical" href="https://skgraphics.site/contact.html">
+
+    <!-- Open Graph -->
+    <meta property="og:type" content="website">
+    <meta property="og:url" content="https://skgraphics.site/contact.html">
+    <meta property="og:title" content="Contact SK Graphics">
+    <meta property="og:description" content="Commission custom WebGL engines, GLSL shaders, and interactive web experiences.">
+    <meta property="og:image" content="https://skgraphics.site/og-preview.png">
+
+    <!-- Favicon -->
+    <link rel="icon" type="image/svg+xml" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><rect fill='%23050505' width='100' height='100' rx='12'/><text x='50' y='68' font-family='serif' font-size='52' font-weight='700' fill='white' text-anchor='middle'>SK</text></svg>">
+
+    <!-- Google Fonts -->
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Montserrat:wght@300;400;600;700&family=Playfair+Display:wght@600;700&display=swap" rel="stylesheet">
+
+    <style>
+        * { box-sizing: border-box; margin: 0; padding: 0; }
+        body, html {
+            font-family: 'Montserrat', sans-serif;
+            background-color: #050505; color: #ffffff;
+            scroll-behavior: smooth;
+        }
+
+        /* Nav */
+        nav {
+            position: fixed; top: 0; width: 100%;
+            padding: 20px 40px;
+            display: flex; justify-content: space-between; align-items: center;
+            z-index: 100; background: rgba(5, 5, 5, 0.85);
+            backdrop-filter: blur(15px); border-bottom: 1px solid rgba(255,255,255,0.06);
+        }
+        .logo { font-family: 'Playfair Display', serif; font-size: 1.4rem; font-weight: 700; letter-spacing: 2px; }
+        .logo a { color: #ffffff; text-decoration: none; }
+        .nav-links { display: flex; gap: 28px; align-items: center; }
+        .nav-links a {
+            color: #888; text-decoration: none; font-size: 0.72rem;
+            letter-spacing: 2px; font-weight: 600; text-transform: uppercase;
+            transition: color 0.3s ease;
+        }
+        .nav-links a:hover, .nav-links a.active { color: #ffffff; }
+        .nav-toggle { display: none; background: none; border: none; color: #fff; font-size: 1.4rem; cursor: pointer; }
+
+        @media (max-width: 768px) {
+            nav { padding: 16px 20px; }
+            .nav-links {
+                display: none; position: absolute; top: 100%; left: 0; right: 0;
+                flex-direction: column; background: rgba(5,5,5,0.95);
+                padding: 20px; gap: 18px; border-bottom: 1px solid rgba(255,255,255,0.06);
+                backdrop-filter: blur(15px);
+            }
+            .nav-links.open { display: flex; }
+            .nav-toggle { display: block; }
+        }
+
+        /* Page hero */
+        .page-hero {
+            padding: 140px 20px 80px; text-align: center;
+            border-bottom: 1px solid #1c1c1c;
+        }
+        .page-hero h1 {
+            font-family: 'Playfair Display', serif;
+            font-size: clamp(2rem, 4vw, 3.2rem);
+            letter-spacing: 4px; margin-bottom: 18px;
+        }
+        .page-hero p {
+            font-size: 1rem; color: #888; font-weight: 300;
+            max-width: 600px; margin: 0 auto; line-height: 1.8;
+        }
+
+        /* Contact layout */
+        .contact-section {
+            max-width: 1000px; margin: 0 auto; padding: 80px 20px;
+            display: grid; grid-template-columns: 1fr 1fr; gap: 60px;
+        }
+        @media (max-width: 768px) {
+            .contact-section { grid-template-columns: 1fr; gap: 40px; }
+        }
+
+        .contact-info h2 {
+            font-family: 'Playfair Display', serif;
+            font-size: 1.4rem; letter-spacing: 2px; margin-bottom: 24px;
+        }
+        .contact-info p {
+            font-size: 0.88rem; color: #888; line-height: 1.8; margin-bottom: 16px; font-weight: 300;
+        }
+
+        .contact-methods {
+            list-style: none; margin-top: 32px;
+        }
+        .contact-methods li {
+            padding: 16px 0; border-bottom: 1px solid #111;
+            display: flex; align-items: center; gap: 14px;
+        }
+        .contact-methods li:last-child { border-bottom: none; }
+        .contact-icon {
+            width: 40px; height: 40px; border-radius: 8px; background: #0d0d0d;
+            border: 1px solid #1c1c1c; display: flex; align-items: center; justify-content: center;
+            font-size: 1rem; flex-shrink: 0;
+        }
+        .contact-detail { }
+        .contact-detail .label {
+            font-size: 0.68rem; letter-spacing: 2px; text-transform: uppercase;
+            color: #555; font-weight: 600; margin-bottom: 4px;
+        }
+        .contact-detail a, .contact-detail span {
+            font-size: 0.88rem; color: #ccc; text-decoration: none; font-weight: 400;
+        }
+        .contact-detail a:hover { color: #fff; }
+
+        /* Contact form */
+        .contact-form h2 {
+            font-family: 'Playfair Display', serif;
+            font-size: 1.4rem; letter-spacing: 2px; margin-bottom: 24px;
+        }
+
+        .form-group {
+            margin-bottom: 20px;
+        }
+        .form-group label {
+            display: block; font-size: 0.72rem; letter-spacing: 2px;
+            text-transform: uppercase; color: #666; font-weight: 600;
+            margin-bottom: 8px;
+        }
+        .form-group input,
+        .form-group textarea,
+        .form-group select {
+            width: 100%; padding: 14px 16px;
+            background: #0a0a0a; border: 1px solid #1c1c1c;
+            border-radius: 6px; color: #fff; font-family: 'Montserrat', sans-serif;
+            font-size: 0.88rem; font-weight: 300;
+            transition: border-color 0.3s;
+            outline: none;
+        }
+        .form-group input:focus,
+        .form-group textarea:focus,
+        .form-group select:focus {
+            border-color: #444;
+        }
+        .form-group textarea { resize: vertical; min-height: 120px; }
+        .form-group select option { background: #0a0a0a; }
+
+        .submit-btn {
+            width: 100%; padding: 14px; background: #ffffff; color: #000;
+            border: none; border-radius: 6px; font-size: 0.78rem;
+            font-weight: 700; letter-spacing: 2px; text-transform: uppercase;
+            cursor: pointer; transition: 0.3s;
+            font-family: 'Montserrat', sans-serif;
+        }
+        .submit-btn:hover { background: #ccc; }
+
+        .form-note {
+            font-size: 0.72rem; color: #555; margin-top: 12px; text-align: center;
+        }
+
+        /* Footer */
+        footer {
+            text-align: center; padding: 40px 20px;
+            border-top: 1px solid rgba(255,255,255,0.06);
+            font-size: 0.75rem; color: #666; letter-spacing: 1px;
+        }
+        footer a { color: #888; text-decoration: none; transition: color 0.3s; }
+        footer a:hover { color: #fff; }
+        .footer-links { margin-bottom: 16px; display: flex; gap: 24px; justify-content: center; flex-wrap: wrap; }
+    </style>
+</head>
+<body>
+
+    <nav>
+        <div class="logo"><a href="/">SK GRAPHICS</a></div>
+        <button class="nav-toggle" onclick="document.querySelector('.nav-links').classList.toggle('open')" aria-label="Toggle navigation">☰</button>
+        <div class="nav-links">
+            <a href="/">Home</a>
+            <a href="/#portfolio">Engines</a>
+            <a href="about.html">About</a>
+            <a href="contact.html" class="active">Contact</a>
+        </div>
+    </nav>
+
+    <section class="page-hero">
+        <h1>Get In Touch</h1>
+        <p>Commission custom WebGL engines, GLSL shader experiences, or discuss a project collaboration.</p>
+    </section>
+
+    <section class="contact-section">
+        <div class="contact-info">
+            <h2>Connect</h2>
+            <p>
+                Whether you need a custom interactive WebGL engine for your brand, a bespoke shader experience for a campaign, or a full spatial web environment — we'd love to hear from you.
+            </p>
+            <p>
+                We typically respond within 24 hours.
+            </p>
+
+            <ul class="contact-methods">
+                <li>
+                    <div class="contact-icon">✉</div>
+                    <div class="contact-detail">
+                        <div class="label">Email</div>
+                        <a href="mailto:contact@skgraphics.site">contact@skgraphics.site</a>
+                    </div>
+                </li>
+                <li>
+                    <div class="contact-icon">◉</div>
+                    <div class="contact-detail">
+                        <div class="label">Facebook</div>
+                        <a href="https://www.facebook.com/profile.php?id=61575071498498" target="_blank">SK Graphics on Facebook</a>
+                    </div>
+                </li>
+                <li>
+                    <div class="contact-icon">▲</div>
+                    <div class="contact-detail">
+                        <div class="label">Website</div>
+                        <a href="https://skgraphics.site" target="_blank">skgraphics.site</a>
+                    </div>
+                </li>
+                <li>
+                    <div class="contact-icon">⟐</div>
+                    <div class="contact-detail">
+                        <div class="label">Location</div>
+                        <span>Available Worldwide — Remote</span>
+                    </div>
+                </li>
+            </ul>
+        </div>
+
+        <div class="contact-form">
+            <h2>Send a Message</h2>
+            <form action="https://formspree.io/f/your-form-id" method="POST">
+                <div class="form-group">
+                    <label for="name">Your Name</label>
+                    <input type="text" id="name" name="name" required placeholder="Full name">
+                </div>
+                <div class="form-group">
+                    <label for="email">Email Address</label>
+                    <input type="email" id="email" name="email" required placeholder="you@company.com">
+                </div>
+                <div class="form-group">
+                    <label for="project-type">Project Type</label>
+                    <select id="project-type" name="project-type">
+                        <option value="">Select a category</option>
+                        <option value="webgl-engine">Custom WebGL / GLSL Engine</option>
+                        <option value="3d-web">3D Spatial Web Experience</option>
+                        <option value="brand-assets">Digital Brand Assets</option>
+                        <option value="ai-automation">AI & Automation System</option>
+                        <option value="consultation">Technical Consultation</option>
+                        <option value="other">Other</option>
+                    </select>
+                </div>
+                <div class="form-group">
+                    <label for="message">Project Details</label>
+                    <textarea id="message" name="message" required placeholder="Describe your project, timeline, and goals..."></textarea>
+                </div>
+                <button type="submit" class="submit-btn">Send Inquiry →</button>
+                <p class="form-note">Your information is kept confidential and never shared.</p>
+            </form>
+        </div>
+    </section>
+
+    <footer>
+        <div class="footer-links">
+            <a href="/">Home</a>
+            <a href="/#portfolio">Engines</a>
+            <a href="about.html">About</a>
+            <a href="contact.html">Contact</a>
+        </div>
+        <p style="margin: 0 0 10px 0;">&copy; 2026 SK Graphics. All Rights Reserved.</p>
+        <p style="margin: 0; font-size: 0.7rem; color: #444;">Built with Vanilla HTML5 Canvas, WebGL, and Pure JavaScript.</p>
+    </footer>
+
+</body>
+</html>
