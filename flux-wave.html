@@ -1,0 +1,189 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <title>FLUX // Electromagnetic Wave Engine</title>
+    <style>
+        :root {
+            --glass-bg: rgba(10, 14, 24, 0.75);
+            --glass-border: rgba(0, 240, 255, 0.25);
+            --text-color: #d0e4ff;
+            --accent: #00f0ff;
+            --secondary: #ff0077;
+        }
+        * { box-sizing: border-box; margin: 0; padding: 0; user-select: none; -webkit-user-select: none; }
+        body, html {
+            width: 100%; height: 100%; overflow: hidden; background: #020408;
+            font-family: 'Courier New', Courier, monospace; touch-action: none; cursor: crosshair; color: var(--text-color);
+        }
+        canvas { display: block; width: 100%; height: 100%; }
+        #hud {
+            position: absolute; top: 24px; left: 24px; color: var(--text-color);
+            pointer-events: none; text-shadow: 0 0 8px rgba(0, 240, 255, 0.4); font-size: 13px; line-height: 1.6; z-index: 10;
+        }
+        .hud-title { font-size: 17px; font-weight: bold; letter-spacing: 2px; color: #fff; margin-bottom: 8px; }
+        .hud-stat { display: flex; gap: 8px; }
+        .hud-label { color: #5c7c9c; }
+        .hud-val { color: #fff; font-weight: bold; }
+        #dock {
+            position: absolute; bottom: 28px; left: 50%; transform: translateX(-50%);
+            display: flex; gap: 10px; padding: 8px 18px; background: var(--glass-bg);
+            border: 1px solid var(--glass-border); border-radius: 100px;
+            backdrop-filter: blur(14px); -webkit-backdrop-filter: blur(14px); z-index: 20;
+            box-shadow: 0 8px 32px rgba(0, 0, 0, 0.8);
+        }
+        .btn {
+            background: transparent; border: 1px solid transparent; color: var(--text-color);
+            font-family: inherit; font-size: 11px; padding: 8px 15px; border-radius: 50px;
+            cursor: pointer; transition: all 0.25s ease; text-transform: uppercase; letter-spacing: 1px;
+        }
+        .btn:hover { border-color: var(--accent); color: #fff; text-shadow: 0 0 8px var(--accent); box-shadow: 0 0 12px rgba(0, 240, 255, 0.25) inset; }
+        .btn.active { background: rgba(0, 240, 255, 0.15); border-color: var(--accent); color: var(--accent); font-weight: bold; }
+        #overlay {
+            position: absolute; top: 0; left: 0; right: 0; bottom: 0;
+            background: radial-gradient(circle at center, rgba(2, 6, 14, 0.85) 0%, rgba(1, 2, 4, 0.98) 100%);
+            display: flex; flex-direction: column; justify-content: center; align-items: center;
+            color: #fff; z-index: 100; cursor: pointer; gap: 12px; transition: opacity 0.4s ease;
+        }
+        #overlay.hidden { opacity: 0; pointer-events: none; }
+        .glitch { font-size: 20px; letter-spacing: 5px; font-weight: bold; color: var(--accent); text-shadow: 0 0 15px rgba(0, 240, 255, 0.6); }
+    </style>
+</head>
+<body>
+    <div id="overlay">
+        <div class="glitch">FLUX // ELECTROMAGNETIC WAVE ENGINE</div>
+        <div style="font-size: 11px; letter-spacing: 2px; color: #5c7c9c; text-transform: uppercase;">Click anywhere to initialize wave synthesis</div>
+    </div>
+    <canvas id="canvas"></canvas>
+    <div id="hud">
+        <div class="hud-title">FLUX // WAVE SIMULATOR</div>
+        <div class="hud-stat"><span class="hud-label">MODE:</span><span class="hud-val" id="mode-val">INTERFERENCE PATTERN</span></div>
+        <div class="hud-stat"><span class="hud-label">EMITTER FREQ:</span><span class="hud-val" id="freq-val">440.0 Hz</span></div>
+        <div class="hud-stat"><span class="hud-label">PROPAGATION:</span><span class="hud-val">c = 299,792 km/s</span></div>
+        <div class="hud-stat"><span class="hud-label">FIELD:</span><span class="hud-val" id="flux-val">MAXWELL-HEAVISIDE</span></div>
+    </div>
+    <div id="dock">
+        <button class="btn active" id="btn-m0" onclick="setMode(0)">● Interference</button>
+        <button class="btn" id="btn-m1" onclick="setMode(1)">○ Standing Wave</button>
+        <button class="btn" id="btn-m2" onclick="setMode(2)">○ Doppler Shift</button>
+        <button class="btn" id="btn-mute" onclick="toggleAudio()">Mute: OFF</button>
+    </div>
+    <script>
+        const canvas = document.getElementById('canvas');
+        const ctx = canvas.getContext('2d');
+        let width, height;
+        function resize() { width = canvas.width = window.innerWidth; height = canvas.height = window.innerHeight; }
+        window.addEventListener('resize', resize);
+        resize();
+
+        let audioCtx = null, isMuted = false, masterGain = null, osc1 = null, osc2 = null, filter = null;
+        function initAudio() {
+            if (audioCtx) return;
+            try {
+                const AudioContext = window.AudioContext || window.webkitAudioContext;
+                audioCtx = new AudioContext();
+                masterGain = audioCtx.createGain(); masterGain.gain.setValueAtTime(0.18, audioCtx.currentTime);
+                filter = audioCtx.createBiquadFilter(); filter.type = 'bandpass'; filter.frequency.setValueAtTime(440, audioCtx.currentTime); filter.Q.setValueAtTime(3, audioCtx.currentTime);
+                osc1 = audioCtx.createOscillator(); osc1.type = 'sawtooth'; osc1.frequency.setValueAtTime(110, audioCtx.currentTime);
+                osc2 = audioCtx.createOscillator(); osc2.type = 'sine'; osc2.frequency.setValueAtTime(220, audioCtx.currentTime);
+                osc1.connect(filter); osc2.connect(filter); filter.connect(masterGain); masterGain.connect(audioCtx.destination);
+                osc1.start(); osc2.start();
+            } catch(e) {}
+        }
+        function toggleAudio() {
+            isMuted = !isMuted;
+            if (masterGain && audioCtx) masterGain.gain.setValueAtTime(isMuted ? 0 : 0.18, audioCtx.currentTime);
+            document.getElementById('btn-mute').textContent = isMuted ? 'Mute: ON' : 'Mute: OFF';
+        }
+
+        let currentMode = 0;
+        const MODE_NAMES = ['INTERFERENCE PATTERN', 'STANDING WAVE HARMONICS', 'DOPPLER RELATIVISTIC SHIFT'];
+        function setMode(m) {
+            currentMode = m;
+            document.querySelectorAll('#dock .btn').forEach((b, idx) => {
+                if (idx < 3) {
+                    b.classList.toggle('active', idx === m);
+                    b.textContent = (idx === m ? '● ' : '○ ') + ['Interference', 'Standing Wave', 'Doppler Shift'][idx];
+                }
+            });
+            document.getElementById('mode-val').textContent = MODE_NAMES[m];
+        }
+
+        let mouseX = width / 2, mouseY = height / 2, isPointerDown = false;
+        window.addEventListener('pointerdown', (e) => {
+            initAudio();
+            document.getElementById('overlay').classList.add('hidden');
+            isPointerDown = true; mouseX = e.clientX; mouseY = e.clientY;
+        });
+        window.addEventListener('pointerup', () => { isPointerDown = false; });
+        window.addEventListener('pointermove', (e) => {
+            mouseX = e.clientX; mouseY = e.clientY;
+            if (filter && audioCtx) {
+                const normFreq = 180 + (mouseX / width) * 800;
+                filter.frequency.setTargetAtTime(normFreq, audioCtx.currentTime, 0.05);
+                document.getElementById('freq-val').textContent = normFreq.toFixed(1) + ' Hz';
+            }
+        });
+
+        const lines = 70;
+        function render(now) {
+            const t = now * 0.002;
+            ctx.fillStyle = 'rgba(2, 4, 8, 0.25)';
+            ctx.fillRect(0, 0, width, height);
+
+            ctx.lineWidth = 1.6;
+            const cx = width / 2, cy = height / 2;
+
+            if (currentMode === 0) { // Interference
+                for (let i = 0; i < lines; i++) {
+                    const r = (i * 18 + t * 40) % (Math.max(width, height) * 0.75);
+                    ctx.beginPath();
+                    ctx.arc(cx - 120, cy, Math.max(0, r), 0, Math.PI * 2);
+                    ctx.strokeStyle = `rgba(0, 240, 255, ${Math.max(0, 1 - r / 600) * 0.35})`;
+                    ctx.stroke();
+
+                    ctx.beginPath();
+                    ctx.arc(mouseX, mouseY, Math.max(0, r), 0, Math.PI * 2);
+                    ctx.strokeStyle = `rgba(255, 0, 119, ${Math.max(0, 1 - r / 600) * 0.35})`;
+                    ctx.stroke();
+                }
+            } else if (currentMode === 1) { // Standing Waves
+                const step = width / 60;
+                for (let j = 0; j < 18; j++) {
+                    ctx.beginPath();
+                    const yBase = cy - 180 + j * 20;
+                    for (let x = 0; x <= width; x += step) {
+                        const k = 0.015;
+                        const w = Math.sin(x * k) * Math.cos(t * 3 + j * 0.2) * (50 + j * 2);
+                        if (x === 0) ctx.moveTo(x, yBase + w);
+                        else ctx.lineTo(x, yBase + w);
+                    }
+                    const col = j % 2 === 0 ? 'rgba(0, 240, 255, 0.45)' : 'rgba(255, 0, 119, 0.45)';
+                    ctx.strokeStyle = col;
+                    ctx.stroke();
+                }
+            } else { // Doppler Shift
+                const vel = 35;
+                const sourceX = cx + Math.sin(t * 1.5) * (width * 0.32);
+                const sourceY = cy;
+                for (let i = 0; i < 35; i++) {
+                    const age = (t * 20 + i * 15) % 300;
+                    const r = age * 3.5;
+                    const shiftX = sourceX - (age * 0.8) * Math.cos(t * 1.5);
+                    ctx.beginPath();
+                    ctx.arc(shiftX, sourceY, r, 0, Math.PI * 2);
+                    const grad = ctx.createLinearGradient(shiftX - r, sourceY, shiftX + r, sourceY);
+                    grad.addColorStop(0, 'rgba(0, 100, 255, 0.6)');
+                    grad.addColorStop(1, 'rgba(255, 40, 60, 0.6)');
+                    ctx.strokeStyle = grad;
+                    ctx.stroke();
+                }
+            }
+
+            requestAnimationFrame(render);
+        }
+        requestAnimationFrame(render);
+    </script>
+</body>
+</html>
