@@ -1,5 +1,14 @@
 [
   {
+    "title": "HELIX // DNA Strand Synthesizer",
+    "client": "Production Engine",
+    "category": "Molecular Visualization",
+    "assetUrl": "./helix-dna.html",
+    "type": "interactive",
+    "description": "Interactive double-helix DNA strand visualization with real-time base pair matching, rotational dynamics, and molecular audio synthesis.",
+    "isNew": true
+  },
+  {
     "title": "NEBULA // Cosmic Particle Forge",
     "client": "Production Engine",
     "category": "Gravitational Particle Dynamics",

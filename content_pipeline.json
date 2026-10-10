@@ -8,7 +8,8 @@
     "description": "Interactive double-helix DNA strand visualization with real-time base pair matching, rotational dynamics, and molecular audio synthesis.",
     "client": "Production Engine",
     "scheduledDate": "2026-10-08",
-    "published": false
+    "published": true,
+    "publishedAt": "2026-10-10T14:38:41.408Z"
   },
   {
     "id": "future-02",
