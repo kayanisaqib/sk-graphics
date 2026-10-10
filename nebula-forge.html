@@ -1,0 +1,445 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <title>NEBULA // Cosmic Particle Forge</title>
+    <style>
+        :root {
+            --glass-bg: rgba(20, 20, 30, 0.6);
+            --glass-border: rgba(100, 150, 255, 0.2);
+            --text-color: #e0e0ff;
+            --accent: #00ffff;
+        }
+
+        * {
+            box-sizing: border-box;
+            margin: 0;
+            padding: 0;
+            user-select: none;
+            -webkit-user-select: none;
+        }
+
+        body, html {
+            width: 100%;
+            height: 100%;
+            overflow: hidden;
+            background-color: #000;
+            font-family: 'Courier New', Courier, monospace;
+            touch-action: none;
+            cursor: crosshair;
+        }
+
+        canvas {
+            display: block;
+            width: 100%;
+            height: 100%;
+        }
+
+        #hud {
+            position: absolute;
+            top: 20px;
+            left: 20px;
+            color: var(--text-color);
+            pointer-events: none;
+            text-shadow: 0 0 5px var(--accent);
+            font-size: 14px;
+            line-height: 1.5;
+            z-index: 10;
+        }
+
+        .title {
+            font-size: 18px;
+            font-weight: bold;
+            margin-bottom: 10px;
+            letter-spacing: 2px;
+        }
+
+        #dock {
+            position: absolute;
+            bottom: 30px;
+            left: 50%;
+            transform: translateX(-50%);
+            display: flex;
+            gap: 15px;
+            padding: 10px 20px;
+            background: var(--glass-bg);
+            border: 1px solid var(--glass-border);
+            border-radius: 100px;
+            backdrop-filter: blur(10px);
+            -webkit-backdrop-filter: blur(10px);
+            z-index: 20;
+            box-shadow: 0 4px 30px rgba(0, 0, 0, 0.5);
+        }
+
+        .btn {
+            background: transparent;
+            border: 1px solid transparent;
+            color: var(--text-color);
+            font-family: inherit;
+            font-size: 12px;
+            padding: 8px 16px;
+            border-radius: 50px;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            text-transform: uppercase;
+            letter-spacing: 1px;
+            display: flex;
+            align-items: center;
+            gap: 6px;
+        }
+
+        .btn:hover {
+            border-color: var(--accent);
+            text-shadow: 0 0 8px var(--accent);
+            box-shadow: 0 0 10px rgba(0, 255, 255, 0.2) inset;
+        }
+
+        .btn.active {
+            background: rgba(0, 255, 255, 0.1);
+            border-color: var(--accent);
+            color: var(--accent);
+        }
+
+        .indicator {
+            font-size: 10px;
+        }
+        
+        #overlay {
+            position: absolute;
+            top: 0; left: 0; right: 0; bottom: 0;
+            background: rgba(0,0,0,0.8);
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            color: #fff;
+            z-index: 100;
+            cursor: pointer;
+            font-size: 24px;
+            letter-spacing: 4px;
+        }
+    </style>
+</head>
+<body>
+
+    <div id="overlay">CLICK TO INITIATE</div>
+
+    <canvas id="glcanvas"></canvas>
+
+    <div id="hud">
+        <div class="title">NEBULA // Cosmic Particle Forge</div>
+        <div>MODE: <span id="mode-display">Nebula Formation</span></div>
+        <div>PARTICLES: <span id="count-display">400</span></div>
+        <div>GRAVITY: <span id="gravity-display">0.5</span> G</div>
+    </div>
+
+    <div id="dock">
+        <button class="btn active" id="btn-mode1" onclick="setMode(0)"><span class="indicator">●</span> Nebula</button>
+        <button class="btn" id="btn-mode2" onclick="setMode(1)"><span class="indicator">○</span> Supernova</button>
+        <button class="btn" id="btn-mode3" onclick="setMode(2)"><span class="indicator">○</span> Binary</button>
+        <button class="btn" onclick="resetParticles()">Reset</button>
+        <button class="btn" id="btn-mute" onclick="toggleMute()"><span class="indicator">●</span> Audio: ON</button>
+    </div>
+
+    <script>
+        // Settings
+        const NUM_PARTICLES = 400;
+        const MAX_DIST = 100;
+        
+        // State
+        let canvas, ctx;
+        let width, height;
+        let particles = [];
+        let mouseX, mouseY;
+        let currentMode = 0; // 0: Nebula, 1: Supernova, 2: Binary
+        let audioCtx, masterGain, droneOsc, droneFilter;
+        let isMuted = false;
+        let audioInitialized = false;
+        let time = 0;
+        let colorPhase = 0;
+
+        // Particle Class
+        class Particle {
+            constructor() {
+                this.x = Math.random() * width;
+                this.y = Math.random() * height;
+                this.vx = (Math.random() - 0.5) * 2;
+                this.vy = (Math.random() - 0.5) * 2;
+                this.mass = Math.random() * 2 + 1;
+                this.history = [];
+            }
+
+            update(mx, my) {
+                let dx = mx - this.x;
+                let dy = my - this.y;
+                let dist = Math.sqrt(dx * dx + dy * dy);
+                let force = 0;
+                
+                if (currentMode === 0) { // Nebula Formation
+                    force = 0.5 / (dist + 10);
+                } else if (currentMode === 1) { // Supernova
+                    force = -5.0 / (dist + 5);
+                } else if (currentMode === 2) { // Binary
+                    // Two orbit points based on time and mouse
+                    let t = time * 0.05;
+                    let p1x = mx + Math.cos(t) * 150;
+                    let p1y = my + Math.sin(t) * 150;
+                    let p2x = mx + Math.cos(t + Math.PI) * 150;
+                    let p2y = my + Math.sin(t + Math.PI) * 150;
+                    
+                    let d1 = Math.sqrt((p1x - this.x)**2 + (p1y - this.y)**2);
+                    let d2 = Math.sqrt((p2x - this.x)**2 + (p2y - this.y)**2);
+                    
+                    if (d1 < d2) {
+                        dx = p1x - this.x; dy = p1y - this.y; dist = d1;
+                    } else {
+                        dx = p2x - this.x; dy = p2y - this.y; dist = d2;
+                    }
+                    force = 0.8 / (dist + 20);
+                }
+
+                if (dist > 0 && dist < 500) {
+                    this.vx += (dx / dist) * force * this.mass;
+                    this.vy += (dy / dist) * force * this.mass;
+                }
+
+                // Friction
+                this.vx *= 0.96;
+                this.vy *= 0.96;
+
+                this.x += this.vx;
+                this.y += this.vy;
+
+                // Bounds
+                if (this.x < 0) this.x += width;
+                if (this.x > width) this.x -= width;
+                if (this.y < 0) this.y += height;
+                if (this.y > height) this.y -= height;
+                
+                // Trail
+                this.history.push({x: this.x, y: this.y});
+                if (this.history.length > 10) this.history.shift();
+            }
+
+            draw(ctx, color) {
+                ctx.beginPath();
+                if (this.history.length > 0) {
+                    ctx.moveTo(this.history[0].x, this.history[0].y);
+                    for (let i = 1; i < this.history.length; i++) {
+                        ctx.lineTo(this.history[i].x, this.history[i].y);
+                    }
+                }
+                ctx.strokeStyle = color;
+                ctx.lineWidth = this.mass;
+                ctx.stroke();
+                
+                ctx.beginPath();
+                ctx.arc(this.x, this.y, this.mass * 1.5, 0, Math.PI * 2);
+                ctx.fillStyle = color;
+                ctx.fill();
+            }
+        }
+
+        function init() {
+            canvas = document.getElementById('glcanvas');
+            ctx = canvas.getContext('2d');
+            
+            resize();
+            window.addEventListener('resize', resize);
+            
+            mouseX = width / 2;
+            mouseY = height / 2;
+
+            canvas.addEventListener('mousemove', (e) => {
+                mouseX = e.clientX;
+                mouseY = e.clientY;
+            });
+            canvas.addEventListener('touchmove', (e) => {
+                mouseX = e.touches[0].clientX;
+                mouseY = e.touches[0].clientY;
+            });
+            
+            document.getElementById('overlay').addEventListener('click', () => {
+                document.getElementById('overlay').style.display = 'none';
+                initAudio();
+            });
+
+            resetParticles();
+            requestAnimationFrame(animate);
+        }
+
+        function resize() {
+            width = canvas.width = window.innerWidth;
+            height = canvas.height = window.innerHeight;
+        }
+
+        function resetParticles() {
+            particles = [];
+            for (let i = 0; i < NUM_PARTICLES; i++) {
+                particles.push(new Particle());
+            }
+        }
+
+        function setMode(mode) {
+            currentMode = mode;
+            document.querySelectorAll('#dock .btn').forEach((btn, idx) => {
+                if (idx < 3) {
+                    btn.classList.toggle('active', idx === mode);
+                    btn.querySelector('.indicator').innerText = idx === mode ? '●' : '○';
+                }
+            });
+            
+            const modeNames = ["Nebula Formation", "Supernova", "Binary Orbit"];
+            document.getElementById('mode-display').innerText = modeNames[mode];
+            
+            if (mode === 1) {
+                document.getElementById('gravity-display').innerText = "-5.0";
+            } else if (mode === 0) {
+                document.getElementById('gravity-display').innerText = "0.5";
+            } else {
+                document.getElementById('gravity-display').innerText = "0.8";
+            }
+        }
+
+        function getColor(phase, alpha = 1) {
+            const r = Math.floor(Math.sin(phase) * 127 + 128);
+            const g = Math.floor(Math.sin(phase + 2) * 127 + 128);
+            const b = Math.floor(Math.sin(phase + 4) * 127 + 128);
+            return `rgba(${r}, ${g}, ${b}, ${alpha})`;
+        }
+
+        function drawBackground() {
+            ctx.fillStyle = 'rgba(0, 0, 5, 0.2)'; // fade effect
+            ctx.fillRect(0, 0, width, height);
+            
+            // Stars
+            ctx.fillStyle = 'rgba(255, 255, 255, 0.5)';
+            for(let i=0; i<10; i++) {
+                ctx.beginPath();
+                ctx.arc(Math.random()*width, Math.random()*height, Math.random()*1.5, 0, Math.PI*2);
+                ctx.fill();
+            }
+        }
+
+        function animate() {
+            drawBackground();
+            
+            time++;
+            colorPhase += 0.01;
+            const pColorAlpha = currentMode === 1 ? 0.8 : 0.5;
+            const pColor = getColor(colorPhase, pColorAlpha);
+            const lineColor = getColor(colorPhase + Math.PI, 0.15);
+            
+            let centerDensity = 0;
+
+            for (let i = 0; i < NUM_PARTICLES; i++) {
+                let p = particles[i];
+                p.update(mouseX, mouseY);
+                p.draw(ctx, pColor);
+                
+                // Audio parameter calc
+                let dx = mouseX - p.x;
+                let dy = mouseY - p.y;
+                let dist = Math.sqrt(dx*dx + dy*dy);
+                if (dist < 150) centerDensity++;
+            }
+
+            // Draw lines
+            ctx.lineWidth = 0.5;
+            ctx.strokeStyle = lineColor;
+            ctx.beginPath();
+            for (let i = 0; i < NUM_PARTICLES; i++) {
+                for (let j = i + 1; j < NUM_PARTICLES; j++) {
+                    let dx = particles[i].x - particles[j].x;
+                    let dy = particles[i].y - particles[j].y;
+                    let dist = dx * dx + dy * dy;
+                    if (dist < MAX_DIST * MAX_DIST) {
+                        ctx.moveTo(particles[i].x, particles[i].y);
+                        ctx.lineTo(particles[j].x, particles[j].y);
+                    }
+                }
+            }
+            ctx.stroke();
+
+            // Update Audio
+            if (audioInitialized && !isMuted) {
+                let targetFreq = 50 + (centerDensity * 1.5);
+                droneOsc.frequency.setTargetAtTime(targetFreq, audioCtx.currentTime, 0.1);
+                droneFilter.frequency.setTargetAtTime(200 + centerDensity * 5, audioCtx.currentTime, 0.1);
+                
+                // Random sparkle
+                if (Math.random() < centerDensity * 0.001) {
+                    playSparkle();
+                }
+            }
+
+            requestAnimationFrame(animate);
+        }
+
+        function initAudio() {
+            if (audioInitialized) return;
+            const AudioContext = window.AudioContext || window.webkitAudioContext;
+            audioCtx = new AudioContext();
+            
+            masterGain = audioCtx.createGain();
+            masterGain.gain.value = 0.5;
+            masterGain.connect(audioCtx.destination);
+            
+            droneOsc = audioCtx.createOscillator();
+            droneOsc.type = 'sine';
+            droneOsc.frequency.value = 50;
+            
+            droneFilter = audioCtx.createBiquadFilter();
+            droneFilter.type = 'lowpass';
+            droneFilter.frequency.value = 200;
+            
+            let lfo = audioCtx.createOscillator();
+            lfo.type = 'triangle';
+            lfo.frequency.value = 0.2;
+            let lfoGain = audioCtx.createGain();
+            lfoGain.gain.value = 50;
+            lfo.connect(lfoGain);
+            lfoGain.connect(droneOsc.frequency);
+            lfo.start();
+            
+            droneOsc.connect(droneFilter);
+            droneFilter.connect(masterGain);
+            droneOsc.start();
+            
+            audioInitialized = true;
+        }
+
+        function playSparkle() {
+            if (!audioInitialized || isMuted) return;
+            let osc = audioCtx.createOscillator();
+            let gain = audioCtx.createGain();
+            
+            osc.type = 'sine';
+            osc.frequency.setValueAtTime(800 + Math.random() * 1000, audioCtx.currentTime);
+            osc.frequency.exponentialRampToValueAtTime(100, audioCtx.currentTime + 0.1);
+            
+            gain.gain.setValueAtTime(0.1, audioCtx.currentTime);
+            gain.gain.exponentialRampToValueAtTime(0.01, audioCtx.currentTime + 0.1);
+            
+            osc.connect(gain);
+            gain.connect(masterGain);
+            
+            osc.start();
+            osc.stop(audioCtx.currentTime + 0.1);
+        }
+
+        function toggleMute() {
+            isMuted = !isMuted;
+            const btn = document.getElementById('btn-mute');
+            btn.innerHTML = `<span class="indicator">${isMuted ? '○' : '●'}</span> Audio: ${isMuted ? 'OFF' : 'ON'}`;
+            btn.classList.toggle('active', !isMuted);
+            
+            if (audioInitialized) {
+                masterGain.gain.setTargetAtTime(isMuted ? 0 : 0.5, audioCtx.currentTime, 0.1);
+            }
+        }
+
+        window.onload = init;
+    </script>
+</body>
+</html>
