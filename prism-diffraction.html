@@ -1,0 +1,614 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <title>PRISM // Light Diffraction Lab</title>
+    <style>
+        :root {
+            --bg-color: #000000;
+            --hud-color: #00ffcc;
+            --glass-bg: rgba(20, 25, 30, 0.6);
+            --glass-border: rgba(255, 255, 255, 0.1);
+        }
+        body, html {
+            margin: 0;
+            padding: 0;
+            width: 100%;
+            height: 100%;
+            background-color: var(--bg-color);
+            overflow: hidden;
+            font-family: 'Courier New', Courier, monospace;
+            color: #fff;
+            touch-action: none;
+            user-select: none;
+            -webkit-user-select: none;
+            cursor: crosshair;
+        }
+        canvas {
+            display: block;
+            width: 100%;
+            height: 100%;
+        }
+        
+        /* HUD styles */
+        #hud {
+            position: absolute;
+            top: 20px;
+            left: 20px;
+            pointer-events: none;
+            font-size: 12px;
+            line-height: 1.5;
+            color: var(--hud-color);
+            text-shadow: 0 0 5px rgba(0, 255, 204, 0.5);
+            z-index: 10;
+        }
+        .hud-line {
+            display: flex;
+            justify-content: space-between;
+            width: 250px;
+        }
+        
+        /* Glass Dock */
+        #dock-container {
+            position: absolute;
+            bottom: 30px;
+            left: 50%;
+            transform: translateX(-50%);
+            display: flex;
+            gap: 15px;
+            background: var(--glass-bg);
+            backdrop-filter: blur(10px);
+            -webkit-backdrop-filter: blur(10px);
+            padding: 10px 20px;
+            border-radius: 100px;
+            border: 1px solid var(--glass-border);
+            box-shadow: 0 10px 30px rgba(0, 0, 0, 0.5), inset 0 0 20px rgba(255, 255, 255, 0.05);
+            z-index: 20;
+        }
+        button {
+            background: transparent;
+            border: none;
+            color: rgba(255, 255, 255, 0.7);
+            font-family: 'Courier New', Courier, monospace;
+            font-size: 11px;
+            text-transform: uppercase;
+            letter-spacing: 1px;
+            cursor: pointer;
+            padding: 8px 15px;
+            border-radius: 50px;
+            transition: all 0.3s ease;
+            outline: none;
+            display: flex;
+            align-items: center;
+            gap: 6px;
+        }
+        button:hover {
+            color: #fff;
+            background: rgba(255, 255, 255, 0.1);
+        }
+        button.active {
+            color: var(--hud-color);
+            background: rgba(0, 255, 204, 0.1);
+            text-shadow: 0 0 5px rgba(0, 255, 204, 0.5);
+        }
+        .indicator {
+            font-size: 8px;
+        }
+        button.active .indicator {
+            color: var(--hud-color);
+            text-shadow: 0 0 5px var(--hud-color);
+        }
+        
+        /* Bloom overlay */
+        #bloom {
+            position: absolute;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            pointer-events: none;
+            mix-blend-mode: screen;
+            z-index: 5;
+            opacity: 0.5;
+        }
+        
+        /* Title */
+        #title {
+            position: absolute;
+            top: 20px;
+            right: 20px;
+            font-size: 10px;
+            letter-spacing: 2px;
+            color: rgba(255, 255, 255, 0.3);
+            text-align: right;
+            pointer-events: none;
+        }
+    </style>
+</head>
+<body>
+    <canvas id="simCanvas"></canvas>
+    
+    <div id="hud">
+        <div style="margin-bottom: 10px; font-weight: bold; font-size: 14px;">PRISM // OPTICS_SYS</div>
+        <div class="hud-line"><span>MODE</span><span id="hud-mode">SINGLE_PRISM</span></div>
+        <div class="hud-line"><span>ACTIVE_OBJECTS</span><span id="hud-objs">1</span></div>
+        <div class="hud-line"><span>BASE_REF_INDEX (n)</span><span id="hud-ri">1.520</span></div>
+        <div class="hud-line"><span>DISPERSION</span><span id="hud-disp">0.025</span></div>
+        <div class="hud-line"><span>LAST_INCIDENCE</span><span id="hud-inc">0.00°</span></div>
+        <div class="hud-line"><span>WAVELENGTHS</span><span style="color:#fff">R O Y G B I V</span></div>
+    </div>
+    
+    <div id="title">
+        SK_GRAPHICS<br>
+        LIGHT DIFFRACTION LAB
+    </div>
+    
+    <div id="dock-container">
+        <button id="btn-mode-1" class="active"><span class="indicator">●</span> Single Prism</button>
+        <button id="btn-mode-2"><span class="indicator">●</span> Double Prism</button>
+        <button id="btn-mode-3"><span class="indicator">●</span> Diamond</button>
+        <div style="width: 1px; background: var(--glass-border); margin: 0 5px;"></div>
+        <button id="btn-reset"><span class="indicator">○</span> Reset</button>
+        <button id="btn-mute"><span class="indicator" id="mute-indicator">●</span> Audio: ON</button>
+    </div>
+
+    <script>
+        // --- MATH & GEOMETRY ---
+        class Vec2 {
+            constructor(x, y) { this.x = x; this.y = y; }
+            add(v) { return new Vec2(this.x + v.x, this.y + v.y); }
+            sub(v) { return new Vec2(this.x - v.x, this.y - v.y); }
+            mul(s) { return new Vec2(this.x * s, this.y * s); }
+            mag() { return Math.sqrt(this.x * this.x + this.y * this.y); }
+            norm() { let m = this.mag(); return m === 0 ? new Vec2(0, 0) : new Vec2(this.x / m, this.y / m); }
+            dot(v) { return this.x * v.x + this.y * v.y; }
+            cross(v) { return this.x * v.y - this.y * v.x; }
+            rot(a) { 
+                let c = Math.cos(a), s = Math.sin(a);
+                return new Vec2(this.x * c - this.y * s, this.x * s + this.y * c);
+            }
+            clone() { return new Vec2(this.x, this.y); }
+        }
+
+        function rayIntersectLine(rayOrigin, rayDir, p1, p2) {
+            let v1 = rayOrigin.sub(p1);
+            let v2 = p2.sub(p1);
+            let v3 = new Vec2(-rayDir.y, rayDir.x);
+            let dot = v2.dot(v3);
+            if (Math.abs(dot) < 0.00001) return null;
+            let t1 = v2.cross(v1) / dot;
+            let t2 = v1.dot(v3) / dot;
+            if (t1 >= 0.0001 && t2 >= 0.0 && t2 <= 1.0) {
+                let n = new Vec2(v2.y, -v2.x).norm();
+                return { t: t1, pt: rayOrigin.add(rayDir.mul(t1)), normal: n };
+            }
+            return null;
+        }
+
+        // --- OPTICS SIMULATION ---
+        const WAVES = [
+            { id: 'R', wl: 700, color: '#ff0000', shift: -0.015 },
+            { id: 'O', wl: 620, color: '#ff7f00', shift: -0.010 },
+            { id: 'Y', wl: 580, color: '#ffff00', shift: -0.005 },
+            { id: 'G', wl: 530, color: '#00ff00', shift: 0.000 },
+            { id: 'B', wl: 470, color: '#0000ff', shift: 0.008 },
+            { id: 'I', wl: 430, color: '#4b0082', shift: 0.015 },
+            { id: 'V', wl: 400, color: '#8f00ff', shift: 0.025 }
+        ];
+
+        class Shape {
+            constructor(type, x, y, size) {
+                this.pos = new Vec2(x, y);
+                this.angle = 0;
+                this.baseRI = 1.52; // Crown glass
+                this.dispersion = 0.04;
+                this.size = size;
+                this.points = [];
+                this.generatePoints(type);
+                this.targetPos = this.pos.clone();
+                this.targetAngle = this.angle;
+            }
+            generatePoints(type) {
+                this.points = [];
+                if (type === 'triangle') {
+                    for(let i=0; i<3; i++) {
+                        this.points.push(new Vec2(0, -this.size).rot(i * Math.PI * 2/3));
+                    }
+                } else if (type === 'diamond') {
+                    this.points.push(new Vec2(0, -this.size));
+                    this.points.push(new Vec2(this.size * 0.7, 0));
+                    this.points.push(new Vec2(0, this.size));
+                    this.points.push(new Vec2(-this.size * 0.7, 0));
+                }
+            }
+            getTransformedPoints() {
+                return this.points.map(p => p.rot(this.angle).add(this.pos));
+            }
+            contains(p) {
+                let pts = this.getTransformedPoints();
+                let inside = false;
+                for (let i = 0, j = pts.length - 1; i < pts.length; j = i++) {
+                    let xi = pts[i].x, yi = pts[i].y;
+                    let xj = pts[j].x, yj = pts[j].y;
+                    let intersect = ((yi > p.y) !== (yj > p.y)) && (p.x < (xj - xi) * (p.y - yi) / (yj - yi) + xi);
+                    if (intersect) inside = !inside;
+                }
+                return inside;
+            }
+        }
+
+        // --- GLOBALS ---
+        const canvas = document.getElementById('simCanvas');
+        const ctx = canvas.getContext('2d', { alpha: false });
+        let cw, ch;
+        let shapes = [];
+        let raysToDraw = [];
+        let mode = 1;
+        let mouse = new Vec2(-1000, -1000);
+        let activeShape = null;
+        let lastIncidence = 0;
+        let audioCtx, masterGain;
+        let audioInitialized = false;
+        let muted = false;
+        let droneOsc, droneGain;
+        
+        let lightSource = { pos: new Vec2(0, 0), dir: new Vec2(1, 0) };
+
+        function resize() {
+            cw = canvas.width = window.innerWidth;
+            ch = canvas.height = window.innerHeight;
+            lightSource.pos.x = -10;
+            lightSource.pos.y = ch / 2;
+        }
+        window.addEventListener('resize', resize);
+        resize();
+
+        function setMode(m) {
+            mode = m;
+            shapes = [];
+            let cx = cw / 2;
+            let cy = ch / 2;
+            if (mode === 1) {
+                let s = new Shape('triangle', cx, cy, 150);
+                s.angle = 0.2;
+                s.targetAngle = 0.2;
+                shapes.push(s);
+            } else if (mode === 2) {
+                let s1 = new Shape('triangle', cx - 150, cy, 120);
+                s1.angle = -0.3; s1.targetAngle = -0.3;
+                let s2 = new Shape('triangle', cx + 150, cy + 20, 120);
+                s2.angle = Math.PI - 0.3; s2.targetAngle = Math.PI - 0.3;
+                shapes.push(s1, s2);
+            } else if (mode === 3) {
+                let s = new Shape('diamond', cx, cy, 180);
+                s.baseRI = 2.417; // Diamond RI
+                s.dispersion = 0.08;
+                s.angle = 0.5;
+                s.targetAngle = 0.5;
+                shapes.push(s);
+            }
+            activeShape = null;
+            document.getElementById('hud-mode').innerText = ['SINGLE_PRISM', 'DOUBLE_PRISM', 'DIAMOND'][m-1];
+            document.getElementById('hud-objs').innerText = shapes.length;
+            document.getElementById('hud-ri').innerText = shapes[0].baseRI.toFixed(3);
+            document.getElementById('hud-disp').innerText = shapes[0].dispersion.toFixed(3);
+            
+            document.querySelectorAll('#dock-container button[id^="btn-mode"]').forEach(b => b.classList.remove('active'));
+            document.getElementById('btn-mode-' + m).classList.add('active');
+            
+            triggerAudioChord();
+        }
+
+        // --- AUDIO ENGINE ---
+        function initAudio() {
+            if (audioInitialized) return;
+            window.AudioContext = window.AudioContext || window.webkitAudioContext;
+            audioCtx = new AudioContext();
+            masterGain = audioCtx.createGain();
+            masterGain.gain.value = 0.4;
+            masterGain.connect(audioCtx.destination);
+            
+            // Drone
+            droneOsc = audioCtx.createOscillator();
+            droneOsc.type = 'sine';
+            droneOsc.frequency.value = 55; // A1
+            droneGain = audioCtx.createGain();
+            droneGain.gain.value = 0.1;
+            droneOsc.connect(droneGain);
+            droneGain.connect(masterGain);
+            droneOsc.start();
+            
+            audioInitialized = true;
+        }
+
+        function playChime(freq, vol) {
+            if (!audioInitialized || muted) return;
+            let osc = audioCtx.createOscillator();
+            let gain = audioCtx.createGain();
+            let panner = audioCtx.createStereoPanner ? audioCtx.createStereoPanner() : null;
+            
+            osc.type = 'sine';
+            osc.frequency.setValueAtTime(freq, audioCtx.currentTime);
+            // Slight pitch bend for glass effect
+            osc.frequency.exponentialRampToValueAtTime(freq * 0.99, audioCtx.currentTime + 1.5);
+            
+            gain.gain.setValueAtTime(0, audioCtx.currentTime);
+            gain.gain.linearRampToValueAtTime(vol, audioCtx.currentTime + 0.05);
+            gain.gain.exponentialRampToValueAtTime(0.001, audioCtx.currentTime + 1.5);
+            
+            if (panner) {
+                panner.pan.value = (Math.random() - 0.5) * 0.5;
+                osc.connect(gain);
+                gain.connect(panner);
+                panner.connect(masterGain);
+            } else {
+                osc.connect(gain);
+                gain.connect(masterGain);
+            }
+            
+            osc.start();
+            osc.stop(audioCtx.currentTime + 1.6);
+        }
+
+        const PENTATONIC = [329.63, 392.00, 440.00, 523.25, 587.33, 659.25, 783.99]; // E Minor pentatonicish
+        let lastChimeTime = 0;
+        function triggerAudioChord() {
+            if (!audioInitialized || muted) return;
+            let now = Date.now();
+            if (now - lastChimeTime < 50) return; // throttle
+            lastChimeTime = now;
+            
+            let i = Math.floor(Math.random() * PENTATONIC.length);
+            playChime(PENTATONIC[i], 0.1);
+        }
+
+        // --- INPUT ---
+        let isDown = false;
+        let lastMouse = new Vec2(0, 0);
+
+        function getEvtPos(e) {
+            if(e.touches && e.touches.length > 0) return new Vec2(e.touches[0].clientX, e.touches[0].clientY);
+            return new Vec2(e.clientX, e.clientY);
+        }
+
+        function onDown(e) {
+            if (e.target.tagName === 'BUTTON') return;
+            initAudio();
+            isDown = true;
+            let p = getEvtPos(e);
+            lastMouse = p;
+            mouse = p;
+            
+            // Interaction logic: pick shape
+            activeShape = null;
+            for (let s of shapes) {
+                if (s.contains(p)) {
+                    activeShape = s;
+                    break;
+                }
+            }
+            if(!activeShape && shapes.length > 0) {
+                // If clicked outside, just rotate the closest one
+                let closest = shapes[0];
+                let minDist = p.sub(shapes[0].pos).mag();
+                for(let i=1; i<shapes.length; i++) {
+                    let d = p.sub(shapes[i].pos).mag();
+                    if(d < minDist) { minDist = d; closest = shapes[i]; }
+                }
+                activeShape = closest;
+            }
+        }
+        function onMove(e) {
+            if(!isDown) return;
+            let p = getEvtPos(e);
+            mouse = p;
+            let delta = p.sub(lastMouse);
+            
+            if (activeShape) {
+                if (activeShape.contains(p)) {
+                    // Translate
+                    activeShape.targetPos = activeShape.targetPos.add(delta);
+                } else {
+                    // Rotate
+                    let center = activeShape.pos;
+                    let v1 = lastMouse.sub(center).norm();
+                    let v2 = p.sub(center).norm();
+                    let angleDelta = Math.atan2(v2.y, v2.x) - Math.atan2(v1.y, v1.x);
+                    activeShape.targetAngle += angleDelta;
+                }
+                triggerAudioChord();
+            }
+            
+            lastMouse = p;
+        }
+        function onUp(e) {
+            isDown = false;
+            activeShape = null;
+        }
+
+        canvas.addEventListener('mousedown', onDown);
+        canvas.addEventListener('mousemove', onMove);
+        window.addEventListener('mouseup', onUp);
+        canvas.addEventListener('touchstart', onDown);
+        canvas.addEventListener('touchmove', onMove, {passive: false});
+        window.addEventListener('touchend', onUp);
+
+        // UI Controls
+        document.getElementById('btn-mode-1').onclick = () => setMode(1);
+        document.getElementById('btn-mode-2').onclick = () => setMode(2);
+        document.getElementById('btn-mode-3').onclick = () => setMode(3);
+        document.getElementById('btn-reset').onclick = () => setMode(mode);
+        document.getElementById('btn-mute').onclick = () => {
+            muted = !muted;
+            document.getElementById('btn-mute').innerHTML = `<span class="indicator">●</span> Audio: ${muted ? 'OFF' : 'ON'}`;
+            if(audioInitialized && droneGain) {
+                droneGain.gain.setTargetAtTime(muted ? 0 : 0.1, audioCtx.currentTime, 0.1);
+            }
+        };
+
+        // --- SIMULATION ---
+        function traceRay(origin, dir, wave, depth = 0, insideShape = null) {
+            if (depth > 10) return; // Max bounces
+            
+            let closestT = Infinity;
+            let closestHit = null;
+            let hitShape = null;
+
+            // Find intersection with any edge
+            for (let s of shapes) {
+                let pts = s.getTransformedPoints();
+                for (let i = 0, j = pts.length - 1; i < pts.length; j = i++) {
+                    let hit = rayIntersectLine(origin, dir, pts[j], pts[i]);
+                    if (hit && hit.t < closestT) {
+                        closestT = hit.t;
+                        closestHit = hit;
+                        hitShape = s;
+                    }
+                }
+            }
+
+            if (closestHit) {
+                let p = closestHit.pt;
+                let n = closestHit.normal;
+                
+                // Draw segment
+                raysToDraw.push({ p1: origin, p2: p, color: wave.color, isWhite: depth===0, depth: depth });
+
+                // Optics logic
+                let cosI = -dir.dot(n);
+                let entering = cosI > 0;
+                
+                // Ensure normal faces against ray
+                if (!entering) { n = n.mul(-1); cosI = -cosI; }
+
+                if (depth === 0) lastIncidence = Math.acos(cosI) * 180 / Math.PI;
+
+                let n1 = entering ? 1.0 : (insideShape ? insideShape.baseRI + insideShape.dispersion * wave.shift : 1.5);
+                let n2 = entering ? (hitShape.baseRI + hitShape.dispersion * wave.shift) : 1.0;
+                let eta = n1 / n2;
+
+                let sinT2 = eta * eta * (1.0 - cosI * cosI);
+
+                if (sinT2 > 1.0) {
+                    // Total Internal Reflection
+                    let rDir = dir.add(n.mul(2 * cosI)).norm();
+                    traceRay(p.add(rDir.mul(0.01)), rDir, wave, depth + 1, insideShape || hitShape);
+                } else {
+                    // Refraction
+                    let cosT = Math.sqrt(1.0 - sinT2);
+                    let tDir = dir.mul(eta).add(n.mul(eta * cosI - cosT)).norm();
+                    traceRay(p.add(tDir.mul(0.01)), tDir, wave, depth + 1, entering ? hitShape : null);
+                }
+            } else {
+                // Ray escapes
+                let end = origin.add(dir.mul(cw * 2));
+                raysToDraw.push({ p1: origin, p2: end, color: wave.color, isWhite: depth===0, depth: depth });
+            }
+        }
+
+        function update() {
+            // Smooth shape transitions
+            for (let s of shapes) {
+                s.pos.x += (s.targetPos.x - s.pos.x) * 0.1;
+                s.pos.y += (s.targetPos.y - s.pos.y) * 0.1;
+                s.angle += (s.targetAngle - s.angle) * 0.1;
+            }
+
+            // Light beam pointing
+            lightSource.pos.y = ch / 2 + Math.sin(Date.now()*0.001)*20;
+            if (shapes.length > 0) {
+                let target = shapes[0].pos;
+                let desiredDir = target.sub(lightSource.pos).norm();
+                lightSource.dir.x += (desiredDir.x - lightSource.dir.x) * 0.05;
+                lightSource.dir.y += (desiredDir.y - lightSource.dir.y) * 0.05;
+                lightSource.dir = lightSource.dir.norm();
+            }
+
+            // Ray tracing
+            raysToDraw = [];
+            for (let wave of WAVES) {
+                // Slightly spread source if not white, but here we emit exact same for white effect
+                traceRay(lightSource.pos, lightSource.dir, wave, 0, null);
+            }
+            
+            document.getElementById('hud-inc').innerText = lastIncidence.toFixed(2) + '°';
+        }
+
+        function draw() {
+            ctx.fillStyle = 'rgba(0, 0, 0, 0.4)'; // Motion blur trail
+            ctx.fillRect(0, 0, cw, ch);
+
+            ctx.lineJoin = 'round';
+            ctx.lineCap = 'round';
+
+            // Draw shapes
+            for (let s of shapes) {
+                let pts = s.getTransformedPoints();
+                
+                // Draw caustics/glow back
+                ctx.fillStyle = 'rgba(255, 255, 255, 0.02)';
+                ctx.beginPath();
+                ctx.moveTo(pts[0].x, pts[0].y);
+                for (let i = 1; i < pts.length; i++) ctx.lineTo(pts[i].x, pts[i].y);
+                ctx.closePath();
+                ctx.fill();
+
+                // Outline
+                ctx.strokeStyle = 'rgba(255, 255, 255, 0.3)';
+                ctx.lineWidth = 1;
+                ctx.stroke();
+                
+                // Inner highlight
+                ctx.strokeStyle = 'rgba(0, 255, 204, 0.2)';
+                ctx.lineWidth = 3;
+                ctx.stroke();
+            }
+
+            // Draw rays
+            ctx.globalCompositeOperation = 'lighter';
+            
+            for (let r of raysToDraw) {
+                ctx.beginPath();
+                ctx.moveTo(r.p1.x, r.p1.y);
+                ctx.lineTo(r.p2.x, r.p2.y);
+                
+                if (r.isWhite) {
+                    ctx.strokeStyle = 'rgba(255,255,255, 0.2)';
+                    ctx.lineWidth = 4;
+                    ctx.stroke();
+                    ctx.strokeStyle = '#ffffff';
+                    ctx.lineWidth = 1.5;
+                    ctx.stroke();
+                } else {
+                    let alpha = 0.6 - (r.depth * 0.1);
+                    if (alpha < 0) alpha = 0;
+                    
+                    // Bloom
+                    ctx.strokeStyle = r.color;
+                    ctx.globalAlpha = alpha * 0.4;
+                    ctx.lineWidth = 6;
+                    ctx.stroke();
+                    
+                    ctx.globalAlpha = alpha;
+                    ctx.lineWidth = 1.5;
+                    ctx.stroke();
+                }
+            }
+            ctx.globalAlpha = 1.0;
+            ctx.globalCompositeOperation = 'source-over';
+        }
+
+        function loop() {
+            update();
+            draw();
+            requestAnimationFrame(loop);
+        }
+
+        // Init
+        setMode(1);
+        loop();
+
+    </script>
+</body>
+</html>
