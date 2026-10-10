@@ -1,0 +1,603 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <title>HELIX // DNA Strand Synthesizer</title>
+    <style>
+        :root {
+            --glass-bg: rgba(12, 16, 28, 0.7);
+            --glass-border: rgba(0, 240, 255, 0.2);
+            --text-color: #d8e8f8;
+            --accent: #00f0ff;
+            --adenine: #ff3366;
+            --thymine: #00f0ff;
+            --guanine: #00ff88;
+            --cytosine: #ffbb00;
+        }
+
+        * {
+            box-sizing: border-box;
+            margin: 0;
+            padding: 0;
+            user-select: none;
+            -webkit-user-select: none;
+        }
+
+        body, html {
+            width: 100%;
+            height: 100%;
+            overflow: hidden;
+            background-color: #030508;
+            font-family: 'Courier New', Courier, monospace;
+            touch-action: none;
+            cursor: crosshair;
+            color: var(--text-color);
+        }
+
+        canvas {
+            display: block;
+            width: 100%;
+            height: 100%;
+        }
+
+        #hud {
+            position: absolute;
+            top: 24px;
+            left: 24px;
+            color: var(--text-color);
+            pointer-events: none;
+            text-shadow: 0 0 8px rgba(0, 240, 255, 0.4);
+            font-size: 13px;
+            line-height: 1.6;
+            z-index: 10;
+        }
+
+        .hud-title {
+            font-size: 17px;
+            font-weight: bold;
+            letter-spacing: 2px;
+            color: #ffffff;
+            margin-bottom: 8px;
+            display: flex;
+            align-items: center;
+            gap: 8px;
+        }
+
+        .hud-badge {
+            font-size: 10px;
+            background: rgba(0, 240, 255, 0.15);
+            border: 1px solid var(--accent);
+            color: var(--accent);
+            padding: 2px 6px;
+            border-radius: 4px;
+            letter-spacing: 1px;
+        }
+
+        .hud-stat {
+            display: flex;
+            gap: 8px;
+        }
+
+        .hud-label {
+            color: #6d8ba6;
+        }
+
+        .hud-val {
+            color: #ffffff;
+            font-weight: bold;
+        }
+
+        .base-legend {
+            margin-top: 10px;
+            display: flex;
+            gap: 12px;
+            font-size: 11px;
+        }
+
+        .legend-item {
+            display: flex;
+            align-items: center;
+            gap: 5px;
+        }
+
+        .legend-dot {
+            width: 8px;
+            height: 8px;
+            border-radius: 50%;
+            display: inline-block;
+        }
+
+        #dock {
+            position: absolute;
+            bottom: 28px;
+            left: 50%;
+            transform: translateX(-50%);
+            display: flex;
+            gap: 10px;
+            padding: 8px 18px;
+            background: var(--glass-bg);
+            border: 1px solid var(--glass-border);
+            border-radius: 100px;
+            backdrop-filter: blur(14px);
+            -webkit-backdrop-filter: blur(14px);
+            z-index: 20;
+            box-shadow: 0 8px 32px rgba(0, 0, 0, 0.7);
+        }
+
+        .btn {
+            background: transparent;
+            border: 1px solid transparent;
+            color: var(--text-color);
+            font-family: inherit;
+            font-size: 11px;
+            padding: 8px 15px;
+            border-radius: 50px;
+            cursor: pointer;
+            transition: all 0.25s ease;
+            text-transform: uppercase;
+            letter-spacing: 1px;
+            display: flex;
+            align-items: center;
+            gap: 6px;
+        }
+
+        .btn:hover {
+            border-color: var(--accent);
+            color: #fff;
+            text-shadow: 0 0 8px var(--accent);
+            box-shadow: 0 0 12px rgba(0, 240, 255, 0.25) inset;
+        }
+
+        .btn.active {
+            background: rgba(0, 240, 255, 0.15);
+            border-color: var(--accent);
+            color: var(--accent);
+            font-weight: bold;
+        }
+
+        #overlay {
+            position: absolute;
+            top: 0; left: 0; right: 0; bottom: 0;
+            background: radial-gradient(circle at center, rgba(3, 8, 18, 0.85) 0%, rgba(1, 2, 5, 0.96) 100%);
+            display: flex;
+            flex-direction: column;
+            justify-content: center;
+            align-items: center;
+            color: #fff;
+            z-index: 100;
+            cursor: pointer;
+            gap: 12px;
+            transition: opacity 0.4s ease;
+        }
+
+        #overlay.hidden {
+            opacity: 0;
+            pointer-events: none;
+        }
+
+        .overlay-glitch {
+            font-size: 20px;
+            letter-spacing: 5px;
+            font-weight: bold;
+            color: var(--accent);
+            text-shadow: 0 0 15px rgba(0, 240, 255, 0.6);
+        }
+
+        .overlay-sub {
+            font-size: 11px;
+            letter-spacing: 2px;
+            color: #6d8ba6;
+            text-transform: uppercase;
+        }
+    </style>
+</head>
+<body>
+
+    <div id="overlay">
+        <div class="overlay-glitch">HELIX // DNA STRAND SYNTHESIZER</div>
+        <div class="overlay-sub">Click anywhere to initialize molecular audio engine</div>
+    </div>
+
+    <canvas id="canvas"></canvas>
+
+    <div id="hud">
+        <div class="hud-title">
+            <span>HELIX // DNA LAB</span>
+            <span class="hud-badge">GENOMIC CORE</span>
+        </div>
+        <div class="hud-stat"><span class="hud-label">MODE:</span><span class="hud-val" id="mode-val">CLASSIC B-DNA</span></div>
+        <div class="hud-stat"><span class="hud-label">BASE PAIRS:</span><span class="hud-val" id="pairs-val">42</span></div>
+        <div class="hud-stat"><span class="hud-label">ROTATION VELOCITY:</span><span class="hud-val" id="speed-val">0.012 rad/s</span></div>
+        <div class="hud-stat"><span class="hud-label">INTERACTION:</span><span class="hud-val" id="interact-val">DRAG OR TILT</span></div>
+        <div class="base-legend">
+            <div class="legend-item"><span class="legend-dot" style="background: var(--adenine); box-shadow: 0 0 6px var(--adenine);"></span>A</div>
+            <div class="legend-item"><span class="legend-dot" style="background: var(--thymine); box-shadow: 0 0 6px var(--thymine);"></span>T</div>
+            <div class="legend-item"><span class="legend-dot" style="background: var(--guanine); box-shadow: 0 0 6px var(--guanine);"></span>G</div>
+            <div class="legend-item"><span class="legend-dot" style="background: var(--cytosine); box-shadow: 0 0 6px var(--cytosine);"></span>C</div>
+        </div>
+    </div>
+
+    <div id="dock">
+        <button class="btn active" id="btn-m0" onclick="setMode(0)">● Classic</button>
+        <button class="btn" id="btn-m1" onclick="setMode(1)">○ Quantum Unwind</button>
+        <button class="btn" id="btn-m2" onclick="setMode(2)">○ Denaturation</button>
+        <button class="btn" onclick="mutateStrand()">Mutate</button>
+        <button class="btn" id="btn-mute" onclick="toggleAudio()">Mute: OFF</button>
+    </div>
+
+    <script>
+        const canvas = document.getElementById('canvas');
+        const ctx = canvas.getContext('2d');
+
+        let width, height;
+        function resize() {
+            width = canvas.width = window.innerWidth;
+            height = canvas.height = window.innerHeight;
+        }
+        window.addEventListener('resize', resize);
+        resize();
+
+        // Audio System
+        let audioCtx = null;
+        let isMuted = false;
+        let masterGain = null;
+        let droneOsc1 = null;
+        let droneOsc2 = null;
+        let filter = null;
+
+        function initAudio() {
+            if (audioCtx) return;
+            try {
+                const AudioContext = window.AudioContext || window.webkitAudioContext;
+                audioCtx = new AudioContext();
+
+                masterGain = audioCtx.createGain();
+                masterGain.gain.setValueAtTime(0.2, audioCtx.currentTime);
+
+                filter = audioCtx.createBiquadFilter();
+                filter.type = 'lowpass';
+                filter.frequency.setValueAtTime(420, audioCtx.currentTime);
+                filter.Q.setValueAtTime(4, audioCtx.currentTime);
+
+                droneOsc1 = audioCtx.createOscillator();
+                droneOsc1.type = 'sine';
+                droneOsc1.frequency.setValueAtTime(110, audioCtx.currentTime); // A2
+
+                droneOsc2 = audioCtx.createOscillator();
+                droneOsc2.type = 'triangle';
+                droneOsc2.frequency.setValueAtTime(165, audioCtx.currentTime); // E3
+
+                droneOsc1.connect(filter);
+                droneOsc2.connect(filter);
+                filter.connect(masterGain);
+                masterGain.connect(audioCtx.destination);
+
+                droneOsc1.start();
+                droneOsc2.start();
+            } catch (e) {
+                console.warn('Audio not available', e);
+            }
+        }
+
+        function playResonance(freq, dur = 0.5) {
+            if (!audioCtx || isMuted) return;
+            try {
+                const osc = audioCtx.createOscillator();
+                const g = audioCtx.createGain();
+                osc.type = 'sine';
+                osc.frequency.setValueAtTime(freq, audioCtx.currentTime);
+                g.gain.setValueAtTime(0.08, audioCtx.currentTime);
+                g.gain.exponentialRampToValueAtTime(0.0001, audioCtx.currentTime + dur);
+                osc.connect(g);
+                g.connect(masterGain);
+                osc.start();
+                osc.stop(audioCtx.currentTime + dur);
+            } catch (e) {}
+        }
+
+        function toggleAudio() {
+            isMuted = !isMuted;
+            if (masterGain && audioCtx) {
+                masterGain.gain.setValueAtTime(isMuted ? 0 : 0.2, audioCtx.currentTime);
+            }
+            document.getElementById('btn-mute').textContent = isMuted ? 'Mute: ON' : 'Mute: OFF';
+        }
+
+        // DNA Structure Data
+        const NUM_PAIRS = 42;
+        const BASES = [
+            { name: 'A', pair: 'T', colA: '#ff3366', colB: '#00f0ff', freqA: 440, freqB: 554 },
+            { name: 'T', pair: 'A', colA: '#00f0ff', colB: '#ff3366', freqA: 554, freqB: 440 },
+            { name: 'G', pair: 'C', colA: '#00ff88', colB: '#ffbb00', freqA: 330, freqB: 494 },
+            { name: 'C', pair: 'G', colA: '#ffbb00', colB: '#00ff88', freqA: 494, freqB: 330 }
+        ];
+
+        let basePairs = [];
+        function generateSequence() {
+            basePairs = [];
+            for (let i = 0; i < NUM_PAIRS; i++) {
+                const choice = BASES[Math.floor(Math.random() * BASES.length)];
+                basePairs.push({
+                    type: choice,
+                    mutation: 0
+                });
+            }
+        }
+        generateSequence();
+
+        function mutateStrand() {
+            for (let i = 0; i < NUM_PAIRS; i++) {
+                if (Math.random() < 0.3) {
+                    basePairs[i].type = BASES[Math.floor(Math.random() * BASES.length)];
+                    basePairs[i].mutation = 1.0;
+                }
+            }
+            playResonance(659.25, 0.8);
+        }
+
+        // Modes
+        // 0: Classic B-DNA (regular pitch, continuous helix)
+        // 1: Quantum Unwind (dynamic winding factor, expansive radius)
+        // 2: Denaturation (strands separate, bonds tear and fluctuate)
+        let currentMode = 0;
+        const MODE_NAMES = ['CLASSIC B-DNA', 'QUANTUM UNWIND', 'DENATURATION (STRAND SPLIT)'];
+
+        function setMode(m) {
+            currentMode = m;
+            document.querySelectorAll('#dock .btn').forEach((b, idx) => {
+                if (idx < 3) {
+                    b.classList.toggle('active', idx === m);
+                    b.textContent = (idx === m ? '● ' : '○ ') + ['Classic', 'Quantum Unwind', 'Denaturation'][idx];
+                }
+            });
+            document.getElementById('mode-val').textContent = MODE_NAMES[m];
+            if (audioCtx) {
+                const freqs = [110, 130.8, 87.3];
+                droneOsc1.frequency.setTargetAtTime(freqs[m], audioCtx.currentTime, 0.2);
+            }
+        }
+
+        // Particle Glow Background
+        const bgStars = [];
+        for (let i = 0; i < 90; i++) {
+            bgStars.push({
+                x: Math.random() * 2000 - 1000,
+                y: Math.random() * 2000 - 1000,
+                z: Math.random() * 1000,
+                size: Math.random() * 1.5 + 0.5,
+                alpha: Math.random() * 0.7 + 0.2
+            });
+        }
+
+        // Simulation parameters
+        let rotY = 0;
+        let rotX = 0;
+        let targetRotX = 0;
+        let rotSpeed = 0.012;
+        let pointerDown = false;
+        let lastPointerX = 0;
+        let lastPointerY = 0;
+
+        // Interaction
+        window.addEventListener('pointerdown', (e) => {
+            initAudio();
+            document.getElementById('overlay').classList.add('hidden');
+            pointerDown = true;
+            lastPointerX = e.clientX;
+            lastPointerY = e.clientY;
+        });
+
+        window.addEventListener('pointerup', () => { pointerDown = false; });
+
+        window.addEventListener('pointermove', (e) => {
+            if (pointerDown) {
+                const dx = e.clientX - lastPointerX;
+                const dy = e.clientY - lastPointerY;
+                rotY += dx * 0.006;
+                targetRotX += dy * 0.004;
+                lastPointerX = e.clientX;
+                lastPointerY = e.clientY;
+
+                if (Math.abs(dx) > 5 && filter && audioCtx) {
+                    filter.frequency.setTargetAtTime(Math.min(1800, 300 + Math.abs(dx) * 40), audioCtx.currentTime, 0.1);
+                }
+            } else {
+                // Subtle tilt
+                const normX = (e.clientX / width - 0.5);
+                const normY = (e.clientY / height - 0.5);
+                targetRotX = normY * 0.5;
+            }
+        });
+
+        // Main Animation Loop
+        let lastTime = performance.now();
+
+        function render(now) {
+            const dt = (now - lastTime) / 1000;
+            lastTime = now;
+
+            rotY += rotSpeed;
+            rotX += (targetRotX - rotX) * 0.05;
+
+            // Clear with subtle trail
+            ctx.fillStyle = '#030508';
+            ctx.fillRect(0, 0, width, height);
+
+            // Draw distant stars
+            ctx.fillStyle = '#ffffff';
+            bgStars.forEach(s => {
+                s.z -= 0.2;
+                if (s.z <= 1) s.z = 1000;
+                const fov = 400;
+                const scale = fov / (fov + s.z);
+                const sx = width / 2 + s.x * scale;
+                const sy = height / 2 + s.y * scale;
+                if (sx >= 0 && sx < width && sy >= 0 && sy < height) {
+                    ctx.globalAlpha = s.alpha * scale;
+                    ctx.beginPath();
+                    ctx.arc(sx, sy, s.size * scale, 0, Math.PI * 2);
+                    ctx.fill();
+                }
+            });
+            ctx.globalAlpha = 1.0;
+
+            // 3D Projection parameters
+            const cx = width / 2;
+            const cy = height / 2;
+            const strandLength = Math.min(height * 0.82, 680);
+            const pairSpacing = strandLength / NUM_PAIRS;
+            const baseYStart = -strandLength / 2;
+
+            // Dynamic mode modifiers
+            let radius = 110;
+            let pitch = 0.35;
+            let strandSplit = 0;
+
+            if (currentMode === 1) { // Quantum Unwind
+                radius = 140 + Math.sin(now * 0.002) * 35;
+                pitch = 0.2 + Math.cos(now * 0.001) * 0.15;
+            } else if (currentMode === 2) { // Denaturation
+                radius = 100;
+                strandSplit = Math.min(180, (Math.sin(now * 0.003) * 0.5 + 0.5) * 160);
+            }
+
+            // Project 3D points: strandA, strandB
+            const renderedPairs = [];
+
+            for (let i = 0; i < NUM_PAIRS; i++) {
+                const py = baseYStart + i * pairSpacing;
+                const theta = i * pitch + rotY;
+
+                // Strand A coordinates in 3D
+                const ax = Math.cos(theta) * radius - strandSplit;
+                const az = Math.sin(theta) * radius;
+
+                // Strand B coordinates (opposite side)
+                const bx = Math.cos(theta + Math.PI) * radius + strandSplit;
+                const bz = Math.sin(theta + Math.PI) * radius;
+
+                // Apply rotX tilt
+                const rotXCos = Math.cos(rotX);
+                const rotXSin = Math.sin(rotX);
+
+                const ayRot = py * rotXCos - az * rotXSin;
+                const azRot = py * rotXSin + az * rotXCos;
+
+                const byRot = py * rotXCos - bz * rotXSin;
+                const bzRot = py * rotXSin + bz * rotXCos;
+
+                // Camera depth perspective
+                const fov = 500;
+                const aScale = fov / (fov + azRot + 300);
+                const bScale = fov / (fov + bzRot + 300);
+
+                const aProjX = cx + ax * aScale;
+                const aProjY = cy + ayRot * aScale;
+
+                const bProjX = cx + bx * bScale;
+                const bProjY = cy + byRot * bScale;
+
+                // Pair depth sort key
+                const depthKey = (azRot + bzRot) / 2;
+
+                renderedPairs.push({
+                    index: i,
+                    data: basePairs[i],
+                    depth: depthKey,
+                    a: { x: aProjX, y: aProjY, z: azRot, scale: aScale },
+                    b: { x: bProjX, y: bProjY, z: bzRot, scale: bScale }
+                });
+            }
+
+            // Sort by average Z for realistic front-to-back occlusion
+            renderedPairs.sort((p1, p2) => p2.depth - p1.depth);
+
+            // Draw backbone paths first (connections between adjacent nodes)
+            ctx.lineWidth = 2.5;
+            for (let i = 0; i < renderedPairs.length; i++) {
+                const p = renderedPairs[i];
+
+                // Hydrogen bond between A and B
+                ctx.beginPath();
+                ctx.moveTo(p.a.x, p.a.y);
+                ctx.lineTo(p.b.x, p.b.y);
+
+                // Bond color gradient
+                const grad = ctx.createLinearGradient(p.a.x, p.a.y, p.b.x, p.b.y);
+                grad.addColorStop(0, p.data.type.colA);
+                grad.addColorStop(0.5, 'rgba(255, 255, 255, 0.4)');
+                grad.addColorStop(1, p.data.type.colB);
+
+                ctx.strokeStyle = grad;
+                ctx.lineWidth = Math.max(1, ((p.a.scale + p.b.scale) / 2) * 2.8);
+                if (strandSplit > 80) {
+                    ctx.setLineDash([4, 6]); // Broken bond effect
+                } else {
+                    ctx.setLineDash([]);
+                }
+                ctx.stroke();
+                ctx.setLineDash([]);
+
+                // Draw Base Node A
+                const rA = Math.max(2.5, 6.5 * p.a.scale);
+                ctx.beginPath();
+                ctx.arc(p.a.x, p.a.y, rA, 0, Math.PI * 2);
+                ctx.fillStyle = p.data.type.colA;
+                ctx.shadowColor = p.data.type.colA;
+                ctx.shadowBlur = p.data.mutation > 0 ? 25 : 12;
+                ctx.fill();
+
+                // Draw Base Node B
+                const rB = Math.max(2.5, 6.5 * p.b.scale);
+                ctx.beginPath();
+                ctx.arc(p.b.x, p.b.y, rB, 0, Math.PI * 2);
+                ctx.fillStyle = p.data.type.colB;
+                ctx.shadowColor = p.data.type.colB;
+                ctx.shadowBlur = p.data.mutation > 0 ? 25 : 12;
+                ctx.fill();
+
+                // Decay mutation visual indicator
+                if (p.data.mutation > 0) {
+                    p.data.mutation -= dt * 0.8;
+                }
+            }
+
+            ctx.shadowBlur = 0; // Reset shadow
+
+            // Connect phosphodiester backbones across adjacent vertical rungs
+            // We need pairs ordered by chronological rung index 0..N-1
+            const indexedPairs = renderedPairs.slice().sort((p1, p2) => p1.index - p2.index);
+
+            // Strand A backbone
+            ctx.beginPath();
+            for (let i = 0; i < indexedPairs.length; i++) {
+                const pt = indexedPairs[i].a;
+                if (i === 0) ctx.moveTo(pt.x, pt.y);
+                else ctx.lineTo(pt.x, pt.y);
+            }
+            ctx.strokeStyle = 'rgba(0, 240, 255, 0.6)';
+            ctx.lineWidth = 1.8;
+            ctx.stroke();
+
+            // Strand B backbone
+            ctx.beginPath();
+            for (let i = 0; i < indexedPairs.length; i++) {
+                const pt = indexedPairs[i].b;
+                if (i === 0) ctx.moveTo(pt.x, pt.y);
+                else ctx.lineTo(pt.x, pt.y);
+            }
+            ctx.strokeStyle = 'rgba(255, 51, 102, 0.6)';
+            ctx.lineWidth = 1.8;
+            ctx.stroke();
+
+            // Telemetry HUD updates
+            document.getElementById('speed-val').textContent = (Math.abs(rotSpeed) * 60).toFixed(2) + ' RPM';
+
+            requestAnimationFrame(render);
+        }
+
+        requestAnimationFrame(render);
+    </script>
+</body>
+</html>
