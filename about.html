@@ -1,0 +1,294 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>About | SK Graphics — Interactive WebGL & 3D Canvas Studio</title>
+    <meta name="description" content="SK Graphics is a digital architecture studio specializing in interactive WebGL environments, custom GLSL shader engines, and high-performance HTML5 canvas experiences.">
+    <meta name="robots" content="index, follow">
+    <link rel="canonical" href="https://skgraphics.site/about.html">
+
+    <!-- Open Graph -->
+    <meta property="og:type" content="website">
+    <meta property="og:url" content="https://skgraphics.site/about.html">
+    <meta property="og:title" content="About SK Graphics — Interactive WebGL Studio">
+    <meta property="og:description" content="Digital architecture studio: Interactive WebGL, GLSL shaders, and HTML5 canvas environments.">
+    <meta property="og:image" content="https://skgraphics.site/og-preview.png">
+
+    <!-- Favicon -->
+    <link rel="icon" type="image/svg+xml" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><rect fill='%23050505' width='100' height='100' rx='12'/><text x='50' y='68' font-family='serif' font-size='52' font-weight='700' fill='white' text-anchor='middle'>SK</text></svg>">
+
+    <!-- Google Fonts -->
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Montserrat:wght@300;400;600;700&family=Playfair+Display:wght@600;700&display=swap" rel="stylesheet">
+
+    <style>
+        * { box-sizing: border-box; margin: 0; padding: 0; }
+        body, html {
+            font-family: 'Montserrat', sans-serif;
+            background-color: #050505; color: #ffffff;
+            scroll-behavior: smooth;
+        }
+
+        /* Nav (same as index) */
+        nav {
+            position: fixed; top: 0; width: 100%;
+            padding: 20px 40px;
+            display: flex; justify-content: space-between; align-items: center;
+            z-index: 100; background: rgba(5, 5, 5, 0.85);
+            backdrop-filter: blur(15px); border-bottom: 1px solid rgba(255,255,255,0.06);
+        }
+        .logo { font-family: 'Playfair Display', serif; font-size: 1.4rem; font-weight: 700; letter-spacing: 2px; }
+        .logo a { color: #ffffff; text-decoration: none; }
+        .nav-links { display: flex; gap: 28px; align-items: center; }
+        .nav-links a {
+            color: #888; text-decoration: none; font-size: 0.72rem;
+            letter-spacing: 2px; font-weight: 600; text-transform: uppercase;
+            transition: color 0.3s ease;
+        }
+        .nav-links a:hover, .nav-links a.active { color: #ffffff; }
+        .nav-toggle { display: none; background: none; border: none; color: #fff; font-size: 1.4rem; cursor: pointer; }
+
+        @media (max-width: 768px) {
+            nav { padding: 16px 20px; }
+            .nav-links {
+                display: none; position: absolute; top: 100%; left: 0; right: 0;
+                flex-direction: column; background: rgba(5,5,5,0.95);
+                padding: 20px; gap: 18px; border-bottom: 1px solid rgba(255,255,255,0.06);
+                backdrop-filter: blur(15px);
+            }
+            .nav-links.open { display: flex; }
+            .nav-toggle { display: block; }
+        }
+
+        /* Page content */
+        .page-hero {
+            padding: 140px 20px 80px; text-align: center;
+            border-bottom: 1px solid #1c1c1c;
+        }
+        .page-hero h1 {
+            font-family: 'Playfair Display', serif;
+            font-size: clamp(2rem, 4vw, 3.2rem);
+            letter-spacing: 4px; margin-bottom: 18px;
+        }
+        .page-hero p {
+            font-size: 1rem; color: #888; font-weight: 300;
+            max-width: 680px; margin: 0 auto; line-height: 1.8;
+        }
+
+        .content-section {
+            max-width: 900px; margin: 0 auto; padding: 80px 20px;
+        }
+
+        .content-section h2 {
+            font-family: 'Playfair Display', serif;
+            font-size: 1.6rem; letter-spacing: 2px; margin-bottom: 24px;
+            padding-bottom: 12px; border-bottom: 1px solid #1c1c1c;
+        }
+        .content-section p {
+            font-size: 0.92rem; color: #aaa; line-height: 1.9;
+            margin-bottom: 18px; font-weight: 300;
+        }
+        .content-section strong { color: #fff; font-weight: 600; }
+
+        /* Philosophy section */
+        .philosophy-quote {
+            margin: 40px 0; padding: 30px 30px 30px 36px;
+            border-left: 3px solid #333; background: #0a0a0a;
+            border-radius: 0 8px 8px 0;
+        }
+        .philosophy-quote p {
+            font-family: 'Playfair Display', serif;
+            font-size: 1.15rem; color: #ddd; font-style: italic;
+            line-height: 1.7; margin: 0;
+        }
+
+        /* Tech stack */
+        .tech-grid {
+            display: grid; grid-template-columns: repeat(auto-fit, minmax(240px, 1fr));
+            gap: 24px; margin-top: 30px;
+        }
+        .tech-card {
+            background: #0d0d0d; border: 1px solid #1c1c1c; border-radius: 8px;
+            padding: 24px; transition: border-color 0.3s;
+        }
+        .tech-card:hover { border-color: #333; }
+        .tech-card h3 {
+            font-size: 0.85rem; letter-spacing: 2px; text-transform: uppercase;
+            margin-bottom: 10px; color: #fff;
+        }
+        .tech-card p {
+            font-size: 0.82rem; color: #777; line-height: 1.6; margin: 0;
+        }
+
+        /* Services */
+        .services-list {
+            list-style: none; margin-top: 24px;
+        }
+        .services-list li {
+            padding: 18px 0; border-bottom: 1px solid #111;
+            display: flex; align-items: flex-start; gap: 16px;
+        }
+        .services-list li:last-child { border-bottom: none; }
+        .service-num {
+            font-family: 'Playfair Display', serif;
+            font-size: 1.4rem; color: #333; font-weight: 700;
+            min-width: 40px;
+        }
+        .service-info h3 {
+            font-size: 0.95rem; letter-spacing: 1px; margin-bottom: 6px;
+        }
+        .service-info p {
+            font-size: 0.82rem; color: #777; margin: 0;
+        }
+
+        /* CTA */
+        .cta-section {
+            text-align: center; padding: 60px 20px;
+            border-top: 1px solid #1c1c1c;
+        }
+        .cta-btn {
+            display: inline-block; padding: 14px 36px; background: #ffffff;
+            color: #000; text-decoration: none; font-size: 0.78rem;
+            font-weight: 700; letter-spacing: 2px; text-transform: uppercase;
+            border-radius: 4px; transition: 0.3s;
+        }
+        .cta-btn:hover { background: #ccc; }
+
+        /* Footer */
+        footer {
+            text-align: center; padding: 40px 20px;
+            border-top: 1px solid rgba(255,255,255,0.06);
+            font-size: 0.75rem; color: #666; letter-spacing: 1px;
+        }
+        footer a { color: #888; text-decoration: none; transition: color 0.3s; }
+        footer a:hover { color: #fff; }
+        .footer-links { margin-bottom: 16px; display: flex; gap: 24px; justify-content: center; flex-wrap: wrap; }
+    </style>
+</head>
+<body>
+
+    <nav>
+        <div class="logo"><a href="/">SK GRAPHICS</a></div>
+        <button class="nav-toggle" onclick="document.querySelector('.nav-links').classList.toggle('open')" aria-label="Toggle navigation">☰</button>
+        <div class="nav-links">
+            <a href="/">Home</a>
+            <a href="/#portfolio">Engines</a>
+            <a href="about.html" class="active">About</a>
+            <a href="contact.html">Contact</a>
+        </div>
+    </nav>
+
+    <section class="page-hero">
+        <h1>About SK Graphics</h1>
+        <p>A digital architecture studio building high-performance interactive web environments, custom GLSL shader engines, and spatial computing experiences.</p>
+    </section>
+
+    <section class="content-section">
+        <h2>The Studio</h2>
+        <p>
+            <strong>SK Graphics</strong> is a creative technology studio focused on the intersection of real-time computer graphics, procedural audio synthesis, and immersive web architecture. Every engine and asset in our portfolio is built from scratch — no templates, no bloated frameworks, no shortcuts.
+        </p>
+        <p>
+            We specialize in <strong>self-contained, zero-dependency WebGL and Canvas experiences</strong> that run at 60 FPS on any device. Each piece is a precision-engineered digital instrument: custom fragment shaders, procedural geometry, reactive audio systems, and physics-driven interactivity — all in pure vanilla JavaScript.
+        </p>
+
+        <div class="philosophy-quote">
+            <p>"Nothing meaningful is built overnight. The real foundation is built during the thousands of quiet late-night hours — debugging shaders at 3:00 AM, tearing down failed prototypes, and rebuilding from scratch."</p>
+        </div>
+
+        <p>
+            Our work draws from computational physics, optical neuroscience, signal processing, and luxury art direction. We don't chase trends — we engineer experiences that feel like the future.
+        </p>
+    </section>
+
+    <section class="content-section" style="padding-top: 0;">
+        <h2>Core Capabilities</h2>
+        <ul class="services-list">
+            <li>
+                <span class="service-num">01</span>
+                <div class="service-info">
+                    <h3>Interactive WebGL & GLSL Engines</h3>
+                    <p>Custom real-time shader engines — raymarching, optical illusions, particle systems, fluid dynamics, and fractal explorers. Each engine runs as a standalone HTML file with zero external dependencies.</p>
+                </div>
+            </li>
+            <li>
+                <span class="service-num">02</span>
+                <div class="service-info">
+                    <h3>Procedural Audio Synthesis</h3>
+                    <p>Real-time Web Audio API sound design — binaural entrainment, FM synthesis, Shepard tones, granular textures, and reactive soundscapes driven by visual kinematics.</p>
+                </div>
+            </li>
+            <li>
+                <span class="service-num">03</span>
+                <div class="service-info">
+                    <h3>Spatial Web Architecture</h3>
+                    <p>Three.js spatial environments with procedural geometry, custom physics engines, vehicle dynamics, zone-based narratives, and HUD telemetry systems.</p>
+                </div>
+            </li>
+            <li>
+                <span class="service-num">04</span>
+                <div class="service-info">
+                    <h3>Digital Brand Assets</h3>
+                    <p>Minimalist visual identities, responsive vector systems, and high-performance UI kits built with obsessive attention to typographic hierarchy and spatial rhythm.</p>
+                </div>
+            </li>
+            <li>
+                <span class="service-num">05</span>
+                <div class="service-info">
+                    <h3>AI & Automation Systems</h3>
+                    <p>Multi-agent AI pipelines, autonomous social media publishing engines, cinematic video generation, and event-driven business workflow automation.</p>
+                </div>
+            </li>
+        </ul>
+    </section>
+
+    <section class="content-section" style="padding-top: 0;">
+        <h2>Technology Stack</h2>
+        <div class="tech-grid">
+            <div class="tech-card">
+                <h3>Graphics</h3>
+                <p>WebGL 2.0 · GLSL ES 3.0 · Canvas 2D · Raymarching · SDF · Fragment Shaders · Procedural Textures</p>
+            </div>
+            <div class="tech-card">
+                <h3>Audio</h3>
+                <p>Web Audio API · FM Synthesis · Binaural Beats · Shepard Tones · Granular Synthesis · Sidechain Ducking</p>
+            </div>
+            <div class="tech-card">
+                <h3>Frontend</h3>
+                <p>Vanilla JavaScript · TypeScript · React 19 · Three.js r186 · HTML5 · CSS3 · Vite</p>
+            </div>
+            <div class="tech-card">
+                <h3>Backend & AI</h3>
+                <p>Python · Meta Graph API · Edge-TTS · FFmpeg · Streamlit · LLM Pipelines · Multi-Agent Systems</p>
+            </div>
+            <div class="tech-card">
+                <h3>Performance</h3>
+                <p>Zero Dependencies · Sub-Second Load · 60 FPS Target · GPU-Optimized · Mobile-First · Lazy Loading</p>
+            </div>
+            <div class="tech-card">
+                <h3>Deployment</h3>
+                <p>GitHub Pages · Cloudflare CDN · Automated CI/CD · Progressive Enhancement · SEO Optimized</p>
+            </div>
+        </div>
+    </section>
+
+    <section class="cta-section">
+        <p style="font-size: 0.88rem; color: #888; margin-bottom: 24px; letter-spacing: 1px;">Ready to build something extraordinary?</p>
+        <a href="contact.html" class="cta-btn">Get In Touch</a>
+    </section>
+
+    <footer>
+        <div class="footer-links">
+            <a href="/">Home</a>
+            <a href="/#portfolio">Engines</a>
+            <a href="about.html">About</a>
+            <a href="contact.html">Contact</a>
+        </div>
+        <p style="margin: 0 0 10px 0;">&copy; 2026 SK Graphics. All Rights Reserved.</p>
+        <p style="margin: 0; font-size: 0.7rem; color: #444;">Built with Vanilla HTML5 Canvas, WebGL, and Pure JavaScript.</p>
+    </footer>
+
+</body>
+</html>
