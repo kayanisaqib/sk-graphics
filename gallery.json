@@ -1,5 +1,50 @@
 [
   {
+    "title": "NEBULA // Cosmic Particle Forge",
+    "client": "Production Engine",
+    "category": "Gravitational Particle Dynamics",
+    "assetUrl": "./nebula-forge.html",
+    "type": "interactive",
+    "description": "Interactive cosmic particle nebula with gravitational cursor attraction, luminous filament connections, and dynamic color cycling through stellar palettes. Features three modes: Nebula Formation, Supernova Repulsion, and Binary Orbit.",
+    "isNew": true
+  },
+  {
+    "title": "TESSERA // Geometric Fractal Matrix",
+    "client": "Production Engine",
+    "category": "Procedural Fractal Explorer",
+    "assetUrl": "./tessera-fractal.html",
+    "type": "interactive",
+    "description": "Real-time GPU-accelerated fractal explorer featuring Mandelbrot, Julia, and Burning Ship sets with smooth log-log coloring, interactive zoom, and FM audio synthesis that shifts harmonics based on zoom depth.",
+    "isNew": true
+  },
+  {
+    "title": "AURORA // Magnetic Field Visualizer",
+    "client": "Production Engine",
+    "category": "Atmospheric & Magnetic Optics",
+    "assetUrl": "./aurora-field.html",
+    "type": "interactive",
+    "description": "Mesmerizing aurora borealis simulation with flowing light curtains, magnetic field line dynamics, and particle flow. Modes: Borealis, Solar Flare, and Magnetosphere with ethereal pad synthesis.",
+    "isNew": true
+  },
+  {
+    "title": "VORTEX // Fluid Dynamics Engine",
+    "client": "Production Engine",
+    "category": "Navier-Stokes Fluid Simulation",
+    "assetUrl": "./vortex-fluid.html",
+    "type": "interactive",
+    "description": "Interactive 2D fluid dynamics simulation using simplified Navier-Stokes solver. Mouse-driven dye injection with chromatic velocity mapping. Modes: Ink Drop, Smoke, and Von Kármán Vortex Streets.",
+    "isNew": true
+  },
+  {
+    "title": "PRISM // Light Diffraction Lab",
+    "client": "Production Engine",
+    "category": "Optical Physics Simulation",
+    "assetUrl": "./prism-diffraction.html",
+    "type": "interactive",
+    "description": "Real-time light refraction simulation with accurate Snell's law physics and wavelength-dependent dispersion. Modes: Single Prism, Double Prism recombination, and Diamond internal reflections.",
+    "isNew": true
+  },
+  {
     "title": "KINETIC-VOID // Paradoxical Scintillation Matrix",
     "client": "Production Engine",
     "category": "Optical Paradox & Binaural Entrainment",
