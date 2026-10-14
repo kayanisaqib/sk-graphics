@@ -1,5 +1,14 @@
 [
   {
+    "title": "FLUX // Electromagnetic Wave Engine",
+    "client": "Production Engine",
+    "category": "Wave Physics Simulation",
+    "assetUrl": "./flux-wave.html",
+    "type": "interactive",
+    "description": "Real-time electromagnetic wave propagation simulator with interference patterns, standing waves, and Doppler shift visualization.",
+    "isNew": true
+  },
+  {
     "title": "HELIX // DNA Strand Synthesizer",
     "client": "Production Engine",
     "category": "Molecular Visualization",

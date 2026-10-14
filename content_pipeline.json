@@ -20,7 +20,8 @@
     "description": "Real-time electromagnetic wave propagation simulator with interference patterns, standing waves, and Doppler shift visualization.",
     "client": "Production Engine",
     "scheduledDate": "2026-10-11",
-    "published": false
+    "published": true,
+    "publishedAt": "2026-10-14T13:58:09.267Z"
   },
   {
     "id": "future-03",
