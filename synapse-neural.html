@@ -4,250 +4,579 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
     <title>SYNAPSE // Bio-Electric Neural Superstructure</title>
-    <style>
-        :root {
-            --glass-bg: rgba(6, 10, 24, 0.75);
-            --glass-border: rgba(0, 240, 255, 0.25);
-            --text-color: #d8ecff;
-            --accent: #00f0ff;
-            --action-potential: #ff0055;
-            --synaptic-glow: #7000ff;
-        }
+    
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Cinzel:wght@600;700;900&family=Plus+Jakarta+Sans:wght@300;400;600;800&family=Space+Mono:wght@400;700&display=swap" rel="stylesheet">
 
-        * {
-            box-sizing: border-box;
-            margin: 0;
-            padding: 0;
+    <style>
+        * { margin: 0; padding: 0; box-sizing: border-box; }
+        html, body {
+            width: 100%; height: 100%;
+            overflow: hidden;
+            background-color: #020206;
+            color: #ffffff;
+            font-family: 'Plus Jakarta Sans', sans-serif;
+            -webkit-font-smoothing: antialiased;
+            touch-action: none;
             user-select: none;
             -webkit-user-select: none;
         }
 
-        body, html {
-            width: 100%;
-            height: 100%;
-            overflow: hidden;
-            background-color: #020308;
-            font-family: 'Courier New', Courier, monospace;
-            touch-action: none;
-            cursor: crosshair;
-            color: var(--text-color);
-        }
-
-        canvas {
-            display: block;
-            width: 100%;
-            height: 100%;
-        }
-
-        #hud {
+        #glcanvas {
             position: absolute;
-            top: 24px;
-            left: 24px;
-            color: var(--text-color);
-            pointer-events: none;
-            text-shadow: 0 0 8px rgba(0, 240, 255, 0.4);
-            font-size: 13px;
-            line-height: 1.6;
-            z-index: 10;
+            top: 0; left: 0;
+            width: 100%; height: 100%;
+            z-index: 1;
+            display: block;
         }
 
-        .hud-title {
-            font-size: 17px;
-            font-weight: bold;
-            letter-spacing: 2px;
-            color: #ffffff;
-            margin-bottom: 8px;
+        .viewport-overlay {
+            position: absolute;
+            top: 0; left: 0; width: 100%; height: 100%;
+            z-index: 2;
+            pointer-events: none;
+            background: 
+                radial-gradient(circle at 50% 50%, transparent 20%, rgba(2, 2, 6, 0.85) 90%),
+                linear-gradient(rgba(112, 0, 255, 0.02) 1px, transparent 1px),
+                linear-gradient(90deg, rgba(0, 240, 255, 0.02) 1px, transparent 1px);
+            background-size: 100% 100%, 60px 60px, 60px 60px;
+        }
+
+        .interface-layer {
+            position: absolute;
+            top: 0; left: 0; width: 100%; height: 100%;
+            z-index: 10;
+            display: flex;
+            flex-direction: column;
+            justify-content: space-between;
+            padding: 30px;
+            pointer-events: none;
+        }
+
+        .hud-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: flex-start;
+            width: 100%;
+        }
+
+        .brand-meta {
             display: flex;
             align-items: center;
-            gap: 8px;
+            gap: 12px;
         }
 
-        .hud-badge {
-            font-size: 10px;
-            background: rgba(112, 0, 255, 0.2);
-            border: 1px solid var(--synaptic-glow);
-            color: #b862ff;
-            padding: 2px 6px;
-            border-radius: 4px;
-            letter-spacing: 1px;
+        .status-dot {
+            width: 8px; height: 8px;
+            background: #b862ff;
+            border-radius: 50%;
+            box-shadow: 0 0 12px #b862ff;
+            animation: pulse 1.8s infinite ease-in-out;
         }
+        @keyframes pulse { 0%, 100% { opacity: 0.3; } 50% { opacity: 1.0; } }
 
-        .hud-stat {
-            display: flex;
-            gap: 8px;
-        }
-
-        .hud-label {
-            color: #587898;
-        }
-
-        .hud-val {
+        .brand-title {
+            font-family: 'Space Mono', monospace;
+            font-size: 0.75rem;
+            font-weight: 700;
+            letter-spacing: 2px;
             color: #ffffff;
-            font-weight: bold;
+            text-transform: uppercase;
+        }
+
+        .telemetry-readout {
+            font-family: 'Space Mono', monospace;
+            font-size: 0.7rem;
+            color: #786a8c;
+            letter-spacing: 1.5px;
+            text-align: right;
+        }
+        .telemetry-readout span { color: #00f0ff; font-weight: bold; }
+
+        .hero-center {
+            max-width: 580px;
+            pointer-events: auto;
+            transform: translateY(-20px);
+        }
+
+        .badge-pill {
+            display: inline-flex;
+            align-items: center;
+            gap: 8px;
+            padding: 6px 14px;
+            background: rgba(112, 0, 255, 0.12);
+            border: 1px solid rgba(184, 98, 255, 0.3);
+            border-radius: 100px;
+            font-family: 'Space Mono', monospace;
+            font-size: 0.65rem;
+            color: #b862ff;
+            letter-spacing: 1.5px;
+            text-transform: uppercase;
+            margin-bottom: 20px;
+            backdrop-filter: blur(10px);
+        }
+
+        .hero-title {
+            font-family: 'Cinzel', serif;
+            font-size: clamp(2.4rem, 5vw, 4.2rem);
+            font-weight: 900;
+            line-height: 1.05;
+            letter-spacing: 1px;
+            margin-bottom: 16px;
+            background: linear-gradient(135deg, #ffffff 40%, #00f0ff 90%);
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+        }
+
+        .hero-desc {
+            font-size: 0.88rem;
+            color: #9aa4b8;
+            line-height: 1.6;
+            margin-bottom: 26px;
+            font-weight: 300;
+        }
+
+        .cta-group {
+            display: flex;
+            align-items: center;
+            gap: 12px;
+            flex-wrap: wrap;
+        }
+
+        .btn-primary {
+            flex: 1;
+            min-width: 150px;
+            padding: 14px 24px;
+            background: #ffffff;
+            color: #020206;
+            border: none;
+            font-family: 'Plus Jakarta Sans', sans-serif;
+            font-size: 0.72rem;
+            font-weight: 700;
+            letter-spacing: 1.8px;
+            text-transform: uppercase;
+            border-radius: 4px;
+            cursor: pointer;
+            transition: all 0.2s ease;
+            box-shadow: 0 0 25px rgba(0, 240, 255, 0.25);
+            text-align: center;
+        }
+        .btn-primary:active { transform: scale(0.98); background: #e0e0e0; }
+
+        .btn-secondary {
+            flex: 1;
+            min-width: 150px;
+            padding: 14px 24px;
+            background: rgba(255, 255, 255, 0.04);
+            color: #ffffff;
+            border: 1px solid rgba(255, 255, 255, 0.2);
+            font-family: 'Plus Jakarta Sans', sans-serif;
+            font-size: 0.72rem;
+            font-weight: 600;
+            letter-spacing: 1.5px;
+            text-transform: uppercase;
+            border-radius: 4px;
+            cursor: pointer;
+            transition: all 0.2s ease;
+            backdrop-filter: blur(10px);
+            text-align: center;
+        }
+        .btn-secondary:active { background: rgba(255, 255, 255, 0.12); }
+
+        .hud-footer {
+            display: flex;
+            justify-content: space-between;
+            align-items: flex-end;
+            width: 100%;
+            border-top: 1px solid rgba(255, 255, 255, 0.08);
+            padding-top: 14px;
+            pointer-events: auto;
+        }
+
+        .footer-metric {
+            font-family: 'Space Mono', monospace;
+            font-size: 0.65rem;
+            color: #786a8c;
+            letter-spacing: 1.5px;
+            text-transform: uppercase;
+        }
+        .footer-metric b { color: #ffffff; }
+
+        .arch-drawer {
+            position: fixed;
+            bottom: 0; left: 0; width: 100%;
+            max-height: 85vh;
+            background: rgba(6, 6, 12, 0.96);
+            backdrop-filter: blur(25px);
+            -webkit-backdrop-filter: blur(25px);
+            border-top: 1px solid rgba(0, 240, 255, 0.25);
+            z-index: 100;
+            padding: 28px 24px;
+            transform: translateY(105%);
+            transition: transform 0.4s cubic-bezier(0.16, 1, 0.3, 1);
+            overflow-y: auto;
+            display: flex;
+            flex-direction: column;
+            gap: 20px;
+        }
+        .arch-drawer.active { transform: translateY(0%); }
+
+        .drawer-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            border-bottom: 1px solid rgba(255, 255, 255, 0.1);
+            padding-bottom: 16px;
+        }
+        .drawer-title {
+            font-family: 'Space Mono', monospace;
+            font-size: 0.85rem;
+            font-weight: 700;
+            letter-spacing: 2px;
+            color: #00f0ff;
+        }
+        .drawer-close-btn {
+            background: rgba(255, 255, 255, 0.08);
+            border: 1px solid rgba(255, 255, 255, 0.2);
+            color: #ffffff;
+            padding: 6px 14px;
+            border-radius: 4px;
+            font-family: 'Space Mono', monospace;
+            font-size: 0.7rem;
+            cursor: pointer;
+            transition: all 0.2s ease;
+        }
+
+        .spec-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(240px, 1fr));
+            gap: 16px;
+        }
+        .spec-card {
+            background: rgba(255, 255, 255, 0.02);
+            border: 1px solid rgba(255, 255, 255, 0.06);
+            padding: 18px;
+            border-radius: 6px;
+        }
+        .spec-card h4 {
+            font-family: 'Space Mono', monospace;
+            font-size: 0.68rem;
+            color: #786a8c;
+            letter-spacing: 1.5px;
+            text-transform: uppercase;
+            margin-bottom: 6px;
+        }
+        .spec-card p {
+            font-size: 0.85rem;
+            color: #ffffff;
+            font-weight: 600;
         }
 
         #dock {
             position: absolute;
-            bottom: 28px;
+            bottom: 24px;
             left: 50%;
             transform: translateX(-50%);
             display: flex;
             gap: 10px;
-            padding: 8px 18px;
-            background: var(--glass-bg);
-            border: 1px solid var(--glass-border);
+            padding: 6px 16px;
+            background: rgba(10, 10, 18, 0.8);
+            border: 1px solid rgba(0, 240, 255, 0.3);
             border-radius: 100px;
             backdrop-filter: blur(14px);
-            -webkit-backdrop-filter: blur(14px);
             z-index: 20;
-            box-shadow: 0 8px 32px rgba(0, 0, 0, 0.8);
+            pointer-events: auto;
         }
-
-        .btn {
+        .dock-btn {
             background: transparent;
             border: 1px solid transparent;
-            color: var(--text-color);
-            font-family: inherit;
+            color: #d0d8ec;
+            font-family: 'Space Mono', monospace;
             font-size: 11px;
-            padding: 8px 15px;
+            padding: 6px 14px;
             border-radius: 50px;
             cursor: pointer;
-            transition: all 0.25s ease;
+            transition: all 0.2s ease;
             text-transform: uppercase;
             letter-spacing: 1px;
-            display: flex;
-            align-items: center;
-            gap: 6px;
         }
-
-        .btn:hover {
-            border-color: var(--accent);
-            color: #fff;
-            text-shadow: 0 0 8px var(--accent);
-            box-shadow: 0 0 12px rgba(0, 240, 255, 0.25) inset;
-        }
-
-        .btn.active {
-            background: rgba(0, 240, 255, 0.15);
-            border-color: var(--accent);
-            color: var(--accent);
-            font-weight: bold;
-        }
-
-        #overlay {
-            position: absolute;
-            top: 0; left: 0; right: 0; bottom: 0;
-            background: radial-gradient(circle at center, rgba(3, 6, 16, 0.85) 0%, rgba(1, 2, 5, 0.98) 100%);
-            display: flex;
-            flex-direction: column;
-            justify-content: center;
-            align-items: center;
-            color: #fff;
-            z-index: 100;
-            cursor: pointer;
-            gap: 12px;
-            transition: opacity 0.4s ease;
-        }
-
-        #overlay.hidden {
-            opacity: 0;
-            pointer-events: none;
-        }
-
-        .glitch-title {
-            font-size: 20px;
-            letter-spacing: 5px;
-            font-weight: bold;
-            color: var(--accent);
-            text-shadow: 0 0 15px rgba(0, 240, 255, 0.6);
-        }
-
-        .glitch-sub {
-            font-size: 11px;
-            letter-spacing: 2px;
-            color: #587898;
-            text-transform: uppercase;
-        }
+        .dock-btn:hover { border-color: #00f0ff; color: #fff; }
+        .dock-btn.active { background: rgba(0, 240, 255, 0.2); border-color: #00f0ff; color: #00f0ff; font-weight: bold; }
     </style>
 </head>
 <body>
 
-    <div id="overlay">
-        <div class="glitch-title">SYNAPSE // NEURAL SUPERSTRUCTURE</div>
-        <div class="glitch-sub">Click anywhere to trigger synaptic bio-electric surge</div>
-    </div>
+    <canvas id="glcanvas"></canvas>
+    <div class="viewport-overlay"></div>
 
-    <canvas id="canvas"></canvas>
+    <main class="interface-layer">
+        <header class="hud-header">
+            <div class="brand-meta">
+                <div class="status-dot"></div>
+                <div class="brand-title">SYNAPSE // NEURAL SUBSTRATE v7.0</div>
+            </div>
+            <div class="telemetry-readout">
+                KERNEL: <span>60 FPS // VOLUMETRIC CORTEX RAYMARCH</span>
+            </div>
+        </header>
 
-    <div id="hud">
-        <div class="hud-title">
-            <span>SYNAPSE // CORTEX V3</span>
-            <span class="hud-badge">BIO-ELECTRIC MATRIX</span>
-        </div>
-        <div class="hud-stat"><span class="hud-label">COGNITIVE MODE:</span><span class="hud-val" id="mode-val">SYNCHRONOUS BURST</span></div>
-        <div class="hud-stat"><span class="hud-label">ACTIVE NEURONS:</span><span class="hud-val" id="neuron-count">96</span></div>
-        <div class="hud-stat"><span class="hud-label">SYNAPTIC PULSES:</span><span class="hud-val" id="pulse-count">0</span></div>
-        <div class="hud-stat"><span class="hud-label">MEMBRANE POTENTIAL:</span><span class="hud-val" id="voltage-val">-70.0 mV</span></div>
-    </div>
+        <section class="hero-center">
+            <div class="badge-pill">Bio-Electric Neural Matrix</div>
+            <h1 class="hero-title">Cognitive<br>Lattice.</h1>
+            <p class="hero-desc">Single-pass hardware raymarcher computing bio-electric action potentials propagating through an organic 3D gyroid neural superstructure. Volumetric light veins, Fresnel iridescence, and interactive impulse waves running at native 60 FPS.</p>
+            <div class="cta-group">
+                <button class="btn-primary" onclick="triggerSynapticBurst()">Trigger Bio-Surge</button>
+                <button class="btn-secondary" onclick="toggleArchitecture(true)">View Telemetry</button>
+            </div>
+        </section>
+
+        <footer class="hud-footer">
+            <div class="footer-metric">CONNECTOME: <b id="hud-mode">SYNCHRONOUS BURST</b></div>
+            <div class="footer-metric">MEMBRANE POTENTIAL: <b id="hud-volt">-70.0 mV</b></div>
+        </footer>
+    </main>
 
     <div id="dock">
-        <button class="btn active" id="btn-m0" onclick="setMode(0)">● Burst Mode</button>
-        <button class="btn" id="btn-m1" onclick="setMode(1)">○ Synaptic Wave</button>
-        <button class="btn" id="btn-m2" onclick="setMode(2)">○ Hyper-Arousal</button>
-        <button class="btn" onclick="fireGlobalSurge()">Bio-Surge</button>
-        <button class="btn" id="btn-mute" onclick="toggleAudio()">Mute: OFF</button>
+        <button class="dock-btn active" id="btn-m0" onclick="setMode(0)">● Neural Gyroid</button>
+        <button class="dock-btn" id="btn-m1" onclick="setMode(1)">○ Synaptic Pulse</button>
+        <button class="dock-btn" id="btn-m2" onclick="setMode(2)">○ Hyper-Arousal</button>
+        <button class="dock-btn" id="btn-mute" onclick="toggleAudio()">Audio: ON</button>
+    </div>
+
+    <!-- Telemetry Architecture Drawer -->
+    <div class="arch-drawer" id="arch-drawer">
+        <div class="drawer-header">
+            <div class="drawer-title">● NEURAL CONNECTOME TELEMETRY</div>
+            <button class="drawer-close-btn" onclick="toggleArchitecture(false)">✕ Close</button>
+        </div>
+
+        <div class="spec-grid">
+            <div class="spec-card">
+                <h4>SDF Mathematical Form</h4>
+                <p>Triple-Harmonic Gyroid Cortex Substrate</p>
+            </div>
+            <div class="spec-card">
+                <h4>Action Potential Speed</h4>
+                <p>120 m/s Myelinated Axon Conduction</p>
+            </div>
+            <div class="spec-card">
+                <h4>Volumetric Glow</h4>
+                <p>Ray-Accredited Plasma Light Emission</p>
+            </div>
+            <div class="spec-card">
+                <h4>Color Pipeline</h4>
+                <p>Deep Indigo to Hyper-Cyan Bio-Fluorescence</p>
+            </div>
+        </div>
     </div>
 
     <script>
-        const canvas = document.getElementById('canvas');
-        const ctx = canvas.getContext('2d');
-        let width, height;
+        const canvas = document.getElementById('glcanvas');
+        const gl = canvas.getContext('webgl', { powerPreference: "high-performance", alpha: false, antialias: false });
+
+        const vs = `attribute vec2 position; void main() { gl_Position = vec4(position, 0.0, 1.0); }`;
+
+        const fs = `
+            precision highp float;
+            uniform vec2 u_resolution;
+            uniform vec2 u_mouse;
+            uniform float u_time;
+            uniform float u_impulse;
+            uniform float u_mode;
+
+            mat2 rot(float a) {
+                float s = sin(a), c = cos(a);
+                return mat2(c, -s, s, c);
+            }
+
+            // Triple-periodic Gyroid Distance Function
+            float sdGyroid(vec3 p, float scale, float thickness, float bias) {
+                p *= scale;
+                return abs(dot(sin(p), cos(p.zxy)) - bias) / scale - thickness;
+            }
+
+            float map(vec3 p) {
+                vec3 q = p;
+
+                // Inertial Dynamic Orbit
+                q.xz *= rot(u_time * 0.2 + u_mouse.x * 2.0);
+                q.yz *= rot(u_time * 0.15 + u_mouse.y * 1.5);
+
+                // Primary organic cortex gyroid boundary
+                float sphere = length(p) - (1.65 + u_impulse * 0.4);
+                float gyroid = sdGyroid(q, 3.2, 0.045, 0.14);
+
+                // Secondary bio-electric dendritic branching
+                float dendritic = sdGyroid(q + vec3(0.3, 0.5, 0.1), 6.4, 0.025, 0.08);
+                gyroid = min(gyroid, dendritic);
+
+                // Wave ripple distortion
+                gyroid -= sin(length(p) * 8.0 - u_time * 4.0) * 0.015 * (1.0 + u_impulse * 2.0);
+
+                return max(sphere, gyroid);
+            }
+
+            vec3 calcNormal(vec3 p) {
+                vec2 e = vec2(0.002, 0.0);
+                return normalize(vec3(
+                    map(p + e.xyy) - map(p - e.xyy),
+                    map(p + e.yxy) - map(p - e.yxy),
+                    map(p + e.yyx) - map(p - e.yyx)
+                ));
+            }
+
+            void main() {
+                vec2 uv = (gl_FragCoord.xy - 0.5 * u_resolution.xy) / min(u_resolution.x, u_resolution.y);
+
+                float isPortrait = step(u_resolution.x, u_resolution.y);
+                vec3 ro = mix(vec3(0.0, 0.2, 4.0), vec3(0.0, 0.5, 3.8), isPortrait);
+                vec3 rd = normalize(vec3(uv.x, uv.y, -1.35));
+
+                float t = 0.0;
+                float d = 0.0;
+                float glow = 0.0;
+                float bioPulse = 0.0;
+                bool hit = false;
+                vec3 p;
+
+                for (int i = 0; i < 52; i++) {
+                    p = ro + rd * t;
+                    d = map(p);
+                    glow += 0.012 / (abs(d) + 0.032);
+                    
+                    // Bio-electric action potential pulse travelling through lattice
+                    float pulseWave = sin(dot(p, vec3(1.2, 0.8, 1.4)) * 4.0 - u_time * 6.0);
+                    if (pulseWave > 0.85) {
+                        bioPulse += 0.018 / (abs(d) + 0.025);
+                    }
+
+                    if (abs(d) < 0.0018) { hit = true; break; }
+                    if (t > 7.5) break;
+                    t += d * 0.75;
+                }
+
+                vec3 col = vec3(0.004, 0.005, 0.012); // Deep cortex background
+
+                if (hit) {
+                    vec3 n = calcNormal(p);
+                    vec3 l1 = normalize(vec3(2.0, 3.0, 2.5));
+                    vec3 l2 = normalize(vec3(-2.0, -1.5, -2.0));
+                    vec3 v = -rd;
+
+                    float diff = max(dot(n, l1), 0.0);
+                    vec3 h = normalize(l1 + v);
+                    float spec = pow(max(dot(n, h), 0.0), 45.0);
+                    float fresnel = pow(1.0 - max(dot(v, n), 0.0), 3.0);
+
+                    // Organic metallic sheen
+                    vec3 baseCol = mix(vec3(0.02, 0.04, 0.08), vec3(0.0, 0.85, 1.0), fresnel);
+                    col = baseCol * (diff * 0.6 + 0.4) + vec3(1.0) * spec * 0.85;
+                }
+
+                // Additive Volumetric Bio-Fluorescence Glow
+                vec3 glowColor = mix(vec3(0.45, 0.0, 0.95), vec3(0.0, 0.95, 1.0), 0.5 + sin(u_time * 1.5) * 0.5);
+                col += glowColor * glow * (0.16 + u_impulse * 0.35);
+
+                // Action Potential traveling pulses
+                vec3 pulseCol = vec3(0.0, 1.0, 0.8) + vec3(1.0, 0.0, 0.4) * u_impulse;
+                col += pulseCol * bioPulse * 0.4;
+
+                // ACES Filmic Tone Mapping Curve
+                col = (col * (2.51 * col + 0.03)) / (col * (2.43 * col + 0.59) + 0.14);
+
+                // Vignette
+                col *= (1.0 - length(uv) * 0.35);
+
+                gl_FragColor = vec4(col, 1.0);
+            }
+        `;
+
+        function createShader(gl, type, source) {
+            const shader = gl.createShader(type);
+            gl.shaderSource(shader, source);
+            gl.compileShader(shader);
+            return shader;
+        }
+
+        const program = gl.createProgram();
+        gl.attachShader(program, createShader(gl, gl.VERTEX_SHADER, vs));
+        gl.attachShader(program, createShader(gl, gl.FRAGMENT_SHADER, fs));
+        gl.linkProgram(program);
+        gl.useProgram(program);
+
+        const posBuf = gl.createBuffer();
+        gl.bindBuffer(gl.ARRAY_BUFFER, posBuf);
+        gl.bufferData(gl.ARRAY_BUFFER, new Float32Array([-1, -1, 1, -1, -1, 1, 1, 1]), gl.STATIC_DRAW);
+
+        const posAttr = gl.getAttribLocation(program, "position");
+        gl.enableVertexAttribArray(posAttr);
+        gl.vertexAttribPointer(posAttr, 2, gl.FLOAT, false, 0, 0);
+
+        const uRes = gl.getUniformLocation(program, "u_resolution");
+        const uMouse = gl.getUniformLocation(program, "u_mouse");
+        const uTime = gl.getUniformLocation(program, "u_time");
+        const uImpulse = gl.getUniformLocation(program, "u_impulse");
+        const uMode = gl.getUniformLocation(program, "u_mode");
+
+        let mouseX = 0.0, mouseY = 0.0;
+        let targetMouseX = 0.0, targetMouseY = 0.0;
+        let impulse = 0.0;
+        let currentMode = 0.0;
 
         function resize() {
-            width = canvas.width = window.innerWidth;
-            height = canvas.height = window.innerHeight;
+            const dpr = Math.min(window.devicePixelRatio || 1, 2);
+            canvas.width = window.innerWidth * dpr;
+            canvas.height = window.innerHeight * dpr;
+            gl.viewport(0, 0, canvas.width, canvas.height);
+            gl.uniform2f(uRes, canvas.width, canvas.height);
         }
         window.addEventListener('resize', resize);
         resize();
 
-        // Procedural Audio Engine
+        // Audio System
         let audioCtx = null;
         let isMuted = false;
         let masterGain = null;
-        let filter = null;
+        let droneOsc = null;
 
         function initAudio() {
             if (audioCtx) return;
             try {
-                const AudioContext = window.AudioContext || window.webkitAudioContext;
-                audioCtx = new AudioContext();
+                audioCtx = new (window.AudioContext || window.webkitAudioContext)();
                 masterGain = audioCtx.createGain();
                 masterGain.gain.setValueAtTime(0.18, audioCtx.currentTime);
 
-                filter = audioCtx.createBiquadFilter();
-                filter.type = 'lowpass';
-                filter.frequency.setValueAtTime(800, audioCtx.currentTime);
-                filter.Q.setValueAtTime(6, audioCtx.currentTime);
+                droneOsc = audioCtx.createOscillator();
+                droneOsc.type = 'sine';
+                droneOsc.frequency.setValueAtTime(110, audioCtx.currentTime);
 
+                const filter = audioCtx.createBiquadFilter();
+                filter.type = 'lowpass';
+                filter.frequency.setValueAtTime(380, audioCtx.currentTime);
+                filter.Q.setValueAtTime(4, audioCtx.currentTime);
+
+                droneOsc.connect(filter);
                 filter.connect(masterGain);
                 masterGain.connect(audioCtx.destination);
+                droneOsc.start();
             } catch(e) {}
         }
 
-        function triggerSynapticChime(freq = 440, type = 'sine', dur = 0.3) {
+        function triggerNeuroAudio() {
             if (!audioCtx || isMuted) return;
             try {
                 const osc = audioCtx.createOscillator();
                 const g = audioCtx.createGain();
-                osc.type = type;
-                osc.frequency.setValueAtTime(freq, audioCtx.currentTime);
-                osc.frequency.exponentialRampToValueAtTime(freq * 0.4, audioCtx.currentTime + dur);
-                g.gain.setValueAtTime(0.08, audioCtx.currentTime);
-                g.gain.exponentialRampToValueAtTime(0.0001, audioCtx.currentTime + dur);
+                osc.type = 'triangle';
+                osc.frequency.setValueAtTime(587.33, audioCtx.currentTime);
+                osc.frequency.exponentialRampToValueAtTime(146.83, audioCtx.currentTime + 0.8);
+                g.gain.setValueAtTime(0.2, audioCtx.currentTime);
+                g.gain.exponentialRampToValueAtTime(0.0001, audioCtx.currentTime + 0.8);
                 osc.connect(g);
-                g.connect(filter);
+                g.connect(masterGain);
                 osc.start();
-                osc.stop(audioCtx.currentTime + dur);
+                osc.stop(audioCtx.currentTime + 0.8);
             } catch(e) {}
         }
 
@@ -256,242 +585,62 @@
             if (masterGain && audioCtx) {
                 masterGain.gain.setValueAtTime(isMuted ? 0 : 0.18, audioCtx.currentTime);
             }
-            document.getElementById('btn-mute').textContent = isMuted ? 'Mute: ON' : 'Mute: OFF';
+            document.getElementById('btn-mute').textContent = isMuted ? 'Audio: OFF' : 'Audio: ON';
         }
 
-        // 3D Neural Architecture
-        const NEURON_COUNT = 96;
-        const neurons = [];
-        let pulses = [];
-
-        class Neuron {
-            constructor(id) {
-                this.id = id;
-                const phi = Math.acos(-1 + (2 * id) / NEURON_COUNT);
-                const theta = Math.sqrt(NEURON_COUNT * Math.PI) * phi;
-                const radius = 260 + (Math.random() - 0.5) * 80;
-
-                this.x = radius * Math.cos(theta) * Math.sin(phi);
-                this.y = radius * Math.sin(theta) * Math.sin(phi);
-                this.z = radius * Math.cos(phi);
-
-                this.baseX = this.x;
-                this.baseY = this.y;
-                this.baseZ = this.z;
-
-                this.charge = 0;
-                this.refractory = 0;
-                this.synapses = [];
-                this.color = Math.random() < 0.25 ? '#ff0055' : (Math.random() < 0.5 ? '#00f0ff' : '#7000ff');
-            }
-
-            fire() {
-                if (this.refractory > 0) return;
-                this.charge = 1.0;
-                this.refractory = 0.4;
-                triggerSynapticChime(220 + (this.id % 12) * 55, 'triangle', 0.25);
-
-                this.synapses.forEach(targetId => {
-                    pulses.push({
-                        from: this,
-                        to: neurons[targetId],
-                        progress: 0,
-                        speed: 0.045 + Math.random() * 0.02,
-                        color: this.color
-                    });
-                });
-            }
+        function triggerSynapticBurst() {
+            initAudio();
+            impulse = 1.0;
+            triggerNeuroAudio();
+            document.getElementById('hud-volt').textContent = "+35.0 mV (DEPOLARIZED)";
+            setTimeout(() => {
+                document.getElementById('hud-volt').textContent = "-70.0 mV (RESTING)";
+            }, 1200);
         }
 
-        for (let i = 0; i < NEURON_COUNT; i++) {
-            neurons.push(new Neuron(i));
+        function toggleArchitecture(show) {
+            document.getElementById('arch-drawer').classList.toggle('active', show);
         }
-
-        // Connect nearest neighbors (Axons / Dendrites)
-        neurons.forEach(n => {
-            const dists = neurons
-                .filter(other => other.id !== n.id)
-                .map(other => {
-                    const dx = n.x - other.x, dy = n.y - other.y, dz = n.z - other.z;
-                    return { id: other.id, dist: Math.hypot(dx, dy, dz) };
-                })
-                .sort((a, b) => a.dist - b.dist);
-
-            const connections = Math.min(4, Math.floor(2 + Math.random() * 3));
-            for (let i = 0; i < connections; i++) {
-                n.synapses.push(dists[i].id);
-            }
-        });
-
-        let currentMode = 0;
-        const MODE_NAMES = ['SYNCHRONOUS BURST', 'SYNAPTIC WAVE PROPAGATION', 'HYPER-AROUSAL CASCADE'];
 
         function setMode(m) {
             currentMode = m;
-            document.querySelectorAll('#dock .btn').forEach((b, idx) => {
+            document.querySelectorAll('#dock .dock-btn').forEach((b, idx) => {
                 if (idx < 3) {
                     b.classList.toggle('active', idx === m);
-                    b.textContent = (idx === m ? '● ' : '○ ') + ['Burst Mode', 'Synaptic Wave', 'Hyper-Arousal'][idx];
+                    b.textContent = (idx === m ? '● ' : '○ ') + ['Neural Gyroid', 'Synaptic Pulse', 'Hyper-Arousal'][idx];
                 }
             });
-            document.getElementById('mode-val').textContent = MODE_NAMES[m];
+            document.getElementById('hud-mode').textContent = ['NEURAL GYROID CORTEX', 'SYNAPTIC PULSE CASCADE', 'HYPER-AROUSAL BURST'][m];
+            triggerSynapticBurst();
         }
-
-        function fireGlobalSurge() {
-            initAudio();
-            for (let i = 0; i < 18; i++) {
-                const randNeuron = neurons[Math.floor(Math.random() * neurons.length)];
-                randNeuron.fire();
-            }
-            if (audioCtx) {
-                triggerSynapticChime(880, 'sine', 0.6);
-            }
-        }
-
-        // Interaction
-        let rotY = 0, rotX = 0, targetRotX = 0, targetRotY = 0;
-        let isPointerDown = false, lastX = 0, lastY = 0;
-
-        window.addEventListener('pointerdown', (e) => {
-            initAudio();
-            document.getElementById('overlay').classList.add('hidden');
-            isPointerDown = true;
-            lastX = e.clientX;
-            lastY = e.clientY;
-
-            // Trigger firing near click
-            const pick = neurons[Math.floor(Math.random() * neurons.length)];
-            pick.fire();
-        });
-
-        window.addEventListener('pointerup', () => { isPointerDown = false; });
 
         window.addEventListener('pointermove', (e) => {
-            if (isPointerDown) {
-                const dx = e.clientX - lastX;
-                const dy = e.clientY - lastY;
-                targetRotY += dx * 0.006;
-                targetRotX += dy * 0.006;
-                lastX = e.clientX;
-                lastY = e.clientY;
-            }
+            targetMouseX = (e.clientX / window.innerWidth) * 2.0 - 1.0;
+            targetMouseY = (e.clientY / window.innerHeight) * 2.0 - 1.0;
         });
 
-        // Main Animation
-        let lastTime = performance.now();
+        window.addEventListener('pointerdown', () => {
+            initAudio();
+        });
 
-        function render(now) {
-            const dt = (now - lastTime) / 1000;
-            lastTime = now;
+        let startTime = performance.now();
+        function loop(now) {
+            const time = (now - startTime) * 0.001;
 
-            rotY += (targetRotY - rotY) * 0.08 + 0.004;
-            rotX += (targetRotX - rotX) * 0.08;
+            mouseX += (targetMouseX - mouseX) * 0.05;
+            mouseY += (targetMouseY - mouseY) * 0.05;
 
-            // Mode automatic firing behaviors
-            if (currentMode === 0 && Math.random() < 0.04) {
-                neurons[Math.floor(Math.random() * neurons.length)].fire();
-            } else if (currentMode === 2 && Math.random() < 0.16) {
-                neurons[Math.floor(Math.random() * neurons.length)].fire();
-            }
+            if (impulse > 0.01) impulse *= 0.95;
 
-            // Canvas clear with deep fade
-            ctx.fillStyle = 'rgba(2, 3, 8, 0.3)';
-            ctx.fillRect(0, 0, width, height);
+            gl.uniform1f(uTime, time);
+            gl.uniform2f(uMouse, mouseX, mouseY);
+            gl.uniform1f(uImpulse, impulse);
+            gl.uniform1f(uMode, currentMode);
 
-            const cx = width / 2;
-            const cy = height / 2;
-            const fov = 450;
-
-            const cosY = Math.cos(rotY), sinY = Math.sin(rotY);
-            const cosX = Math.cos(rotX), sinX = Math.sin(rotX);
-
-            // Project 3D nodes
-            neurons.forEach(n => {
-                if (n.refractory > 0) n.refractory -= dt;
-                if (n.charge > 0) n.charge = Math.max(0, n.charge - dt * 2.2);
-
-                // Rotation Y
-                const x1 = n.x * cosY - n.z * sinY;
-                const z1 = n.x * sinY + n.z * cosY;
-
-                // Rotation X
-                const y2 = n.y * cosX - z1 * sinX;
-                const z2 = n.y * sinX + z1 * cosX;
-
-                const scale = fov / (fov + z2 + 400);
-                n.projX = cx + x1 * scale;
-                n.projY = cy + y2 * scale;
-                n.projScale = scale;
-                n.projZ = z2;
-            });
-
-            // Draw Synaptic Axons (Dormant Connections)
-            ctx.lineWidth = 0.8;
-            neurons.forEach(n => {
-                n.synapses.forEach(targetId => {
-                    const target = neurons[targetId];
-                    if (n.id < target.id) { // Draw once
-                        ctx.beginPath();
-                        ctx.moveTo(n.projX, n.projY);
-                        ctx.lineTo(target.projX, target.projY);
-                        ctx.strokeStyle = `rgba(30, 60, 110, ${0.15 * Math.min(n.projScale, target.projScale)})`;
-                        ctx.stroke();
-                    }
-                });
-            });
-
-            // Update & Render Action Potential Pulses
-            for (let i = pulses.length - 1; i >= 0; i--) {
-                const p = pulses[i];
-                p.progress += p.speed;
-
-                if (p.progress >= 1.0) {
-                    p.to.fire(); // Propagate!
-                    pulses.splice(i, 1);
-                    continue;
-                }
-
-                const px = p.from.projX + (p.to.projX - p.from.projX) * p.progress;
-                const py = p.from.projY + (p.to.projY - p.from.projY) * p.progress;
-
-                ctx.beginPath();
-                ctx.arc(px, py, 2.5 * p.from.projScale, 0, Math.PI * 2);
-                ctx.fillStyle = p.color;
-                ctx.shadowColor = p.color;
-                ctx.shadowBlur = 10;
-                ctx.fill();
-                ctx.shadowBlur = 0;
-            }
-
-            // Draw Neuron Cell Bodies (Somas)
-            neurons.forEach(n => {
-                const r = Math.max(2, (4 + n.charge * 6) * n.projScale);
-                ctx.beginPath();
-                ctx.arc(n.projX, n.projY, r, 0, Math.PI * 2);
-
-                if (n.charge > 0.05) {
-                    ctx.fillStyle = '#ffffff';
-                    ctx.shadowColor = n.color;
-                    ctx.shadowBlur = 20 * n.charge;
-                    ctx.fill();
-                    ctx.shadowBlur = 0;
-                } else {
-                    ctx.fillStyle = n.color;
-                    ctx.globalAlpha = Math.min(1.0, 0.4 + n.projScale * 0.6);
-                    ctx.fill();
-                    ctx.globalAlpha = 1.0;
-                }
-            });
-
-            // Telemetry updates
-            document.getElementById('pulse-count').textContent = pulses.length;
-            const avgCharge = neurons.reduce((acc, cur) => acc + cur.charge, 0) / NEURON_COUNT;
-            const voltage = (-70 + avgCharge * 100).toFixed(1);
-            document.getElementById('voltage-val').textContent = `${voltage} mV`;
-
-            requestAnimationFrame(render);
+            gl.drawArrays(gl.TRIANGLE_STRIP, 0, 4);
+            requestAnimationFrame(loop);
         }
-        requestAnimationFrame(render);
+        requestAnimationFrame(loop);
     </script>
 </body>
 </html>
