@@ -1,0 +1,338 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <title>CHROMA // Superluminal Spectral Dispersion Engine</title>
+    <style>
+        :root {
+            --glass-bg: rgba(14, 10, 20, 0.75);
+            --glass-border: rgba(255, 255, 255, 0.25);
+            --text-color: #f0f4ff;
+            --accent: #00ffff;
+        }
+
+        * {
+            box-sizing: border-box;
+            margin: 0;
+            padding: 0;
+            user-select: none;
+            -webkit-user-select: none;
+        }
+
+        body, html {
+            width: 100%;
+            height: 100%;
+            overflow: hidden;
+            background: #020204;
+            font-family: 'Courier New', Courier, monospace;
+            touch-action: none;
+            cursor: crosshair;
+            color: var(--text-color);
+        }
+
+        canvas {
+            display: block;
+            width: 100%;
+            height: 100%;
+        }
+
+        #hud {
+            position: absolute;
+            top: 24px;
+            left: 24px;
+            color: var(--text-color);
+            pointer-events: none;
+            text-shadow: 0 0 8px rgba(0, 255, 255, 0.4);
+            font-size: 13px;
+            line-height: 1.6;
+            z-index: 10;
+        }
+
+        .hud-title {
+            font-size: 17px;
+            font-weight: bold;
+            letter-spacing: 2px;
+            color: #ffffff;
+            margin-bottom: 8px;
+            display: flex;
+            align-items: center;
+            gap: 8px;
+        }
+
+        .hud-badge {
+            font-size: 10px;
+            background: linear-gradient(90deg, #ff0055, #00f0ff);
+            color: #ffffff;
+            padding: 2px 6px;
+            border-radius: 4px;
+            letter-spacing: 1px;
+            font-weight: bold;
+        }
+
+        .hud-stat {
+            display: flex;
+            gap: 8px;
+        }
+
+        .hud-label {
+            color: #687890;
+        }
+
+        .hud-val {
+            color: #ffffff;
+            font-weight: bold;
+        }
+
+        #dock {
+            position: absolute;
+            bottom: 28px;
+            left: 50%;
+            transform: translateX(-50%);
+            display: flex;
+            gap: 10px;
+            padding: 8px 18px;
+            background: var(--glass-bg);
+            border: 1px solid var(--glass-border);
+            border-radius: 100px;
+            backdrop-filter: blur(14px);
+            -webkit-backdrop-filter: blur(14px);
+            z-index: 20;
+            box-shadow: 0 8px 32px rgba(0, 0, 0, 0.8);
+        }
+
+        .btn {
+            background: transparent;
+            border: 1px solid transparent;
+            color: var(--text-color);
+            font-family: inherit;
+            font-size: 11px;
+            padding: 8px 15px;
+            border-radius: 50px;
+            cursor: pointer;
+            transition: all 0.25s ease;
+            text-transform: uppercase;
+            letter-spacing: 1px;
+            display: flex;
+            align-items: center;
+            gap: 6px;
+        }
+
+        .btn:hover {
+            border-color: #fff;
+            color: #fff;
+            box-shadow: 0 0 12px rgba(255, 255, 255, 0.3) inset;
+        }
+
+        .btn.active {
+            background: rgba(255, 255, 255, 0.2);
+            border-color: #fff;
+            color: #fff;
+            font-weight: bold;
+        }
+
+        #overlay {
+            position: absolute;
+            top: 0; left: 0; right: 0; bottom: 0;
+            background: radial-gradient(circle at center, rgba(4, 3, 8, 0.85) 0%, rgba(1, 0, 3, 0.98) 100%);
+            display: flex;
+            flex-direction: column;
+            justify-content: center;
+            align-items: center;
+            color: #fff;
+            z-index: 100;
+            cursor: pointer;
+            gap: 12px;
+            transition: opacity 0.4s ease;
+        }
+
+        #overlay.hidden {
+            opacity: 0;
+            pointer-events: none;
+        }
+    </style>
+</head>
+<body>
+
+    <div id="overlay">
+        <div style="font-size: 20px; letter-spacing: 5px; font-weight: bold; color: #fff; text-shadow: 0 0 15px rgba(0, 240, 255, 0.8);">CHROMA // SPECTRAL DISPERSION LAB</div>
+        <div style="font-size: 11px; letter-spacing: 2px; color: #687890; text-transform: uppercase;">Click to activate chromatic shear wave harmonic synthesis</div>
+    </div>
+
+    <canvas id="canvas"></canvas>
+
+    <div id="hud">
+        <div class="hud-title">
+            <span>CHROMA // CHROMATIC SHEAR</span>
+            <span class="hud-badge">RGB POLARIZATION</span>
+        </div>
+        <div class="hud-stat"><span class="hud-label">ABERRATION MODE:</span><span class="hud-val" id="mode-val">RADIAL TRIPLE-BAND SPLIT</span></div>
+        <div class="hud-stat"><span class="hud-label">DISPERSION INTENSITY:</span><span class="hud-val" id="disp-val">Δλ = 18.4 nm</span></div>
+        <div class="hud-stat"><span class="hud-label">SPECTRAL BANDWIDTH:</span><span class="hud-val">380 nm - 750 nm (FULL VISIBLE)</span></div>
+        <div class="hud-stat"><span class="hud-label">PHASE SHIELD:</span><span class="hud-val">HERTZIAN CAUSTICS</span></div>
+    </div>
+
+    <div id="dock">
+        <button class="btn active" id="btn-m0" onclick="setMode(0)">● Triple-Band</button>
+        <button class="btn" id="btn-m1" onclick="setMode(1)">○ Vortex Shear</button>
+        <button class="btn" id="btn-m2" onclick="setMode(2)">○ Prism Caustic</button>
+        <button class="btn" onclick="fireChromaticPulse()">Spectral Pulse</button>
+        <button class="btn" id="btn-mute" onclick="toggleAudio()">Mute: OFF</button>
+    </div>
+
+    <script>
+        const canvas = document.getElementById('canvas');
+        const ctx = canvas.getContext('2d');
+        let width, height;
+
+        function resize() {
+            width = canvas.width = window.innerWidth;
+            height = canvas.height = window.innerHeight;
+        }
+        window.addEventListener('resize', resize);
+        resize();
+
+        // Web Audio API Triple-Harmonic Synthesizer (Red, Green, Blue Chords)
+        let audioCtx = null;
+        let isMuted = false;
+        let masterGain = null;
+
+        function initAudio() {
+            if (audioCtx) return;
+            try {
+                audioCtx = new (window.AudioContext || window.webkitAudioContext)();
+                masterGain = audioCtx.createGain();
+                masterGain.gain.setValueAtTime(0.18, audioCtx.currentTime);
+                masterGain.connect(audioCtx.destination);
+            } catch(e) {}
+        }
+
+        function playColorChord(baseFreq = 300) {
+            if (!audioCtx || isMuted) return;
+            try {
+                // R, G, B tri-tone frequencies
+                const freqs = [baseFreq, baseFreq * 1.25, baseFreq * 1.5];
+                freqs.forEach(f => {
+                    const osc = audioCtx.createOscillator();
+                    const g = audioCtx.createGain();
+                    osc.type = 'triangle';
+                    osc.frequency.setValueAtTime(f, audioCtx.currentTime);
+                    g.gain.setValueAtTime(0.04, audioCtx.currentTime);
+                    g.gain.exponentialRampToValueAtTime(0.0001, audioCtx.currentTime + 0.5);
+                    osc.connect(g);
+                    g.connect(masterGain);
+                    osc.start();
+                    osc.stop(audioCtx.currentTime + 0.5);
+                });
+            } catch(e) {}
+        }
+
+        function toggleAudio() {
+            isMuted = !isMuted;
+            if (masterGain && audioCtx) {
+                masterGain.gain.setValueAtTime(isMuted ? 0 : 0.18, audioCtx.currentTime);
+            }
+            document.getElementById('btn-mute').textContent = isMuted ? 'Mute: ON' : 'Mute: OFF';
+        }
+
+        let currentMode = 0;
+        function setMode(m) {
+            currentMode = m;
+            document.querySelectorAll('#dock .btn').forEach((b, idx) => {
+                if (idx < 3) {
+                    b.classList.toggle('active', idx === m);
+                    b.textContent = (idx === m ? '● ' : '○ ') + ['Triple-Band', 'Vortex Shear', 'Prism Caustic'][idx];
+                }
+            });
+            document.getElementById('mode-val').textContent = ['RADIAL TRIPLE-BAND SPLIT', 'CHROMATIC VORTEX SHEAR', 'PRISM REFRACTIVE CAUSTIC'][m];
+            playColorChord(380);
+        }
+
+        let pulseMagnitude = 0;
+        function fireChromaticPulse() {
+            pulseMagnitude = 1.0;
+            playColorChord(520);
+        }
+
+        let mouseX = width / 2;
+        let mouseY = height / 2;
+
+        window.addEventListener('pointerdown', (e) => {
+            initAudio();
+            document.getElementById('overlay').classList.add('hidden');
+            mouseX = e.clientX;
+            mouseY = e.clientY;
+            fireChromaticPulse();
+        });
+
+        window.addEventListener('pointermove', (e) => {
+            mouseX = e.clientX;
+            mouseY = e.clientY;
+        });
+
+        // Generative Wave Ring Lattice
+        const RINGS = 32;
+
+        function render(now) {
+            const t = now * 0.002;
+
+            ctx.fillStyle = 'rgba(2, 2, 4, 0.28)';
+            ctx.fillRect(0, 0, width, height);
+
+            const cx = width / 2;
+            const cy = height / 2;
+
+            const shearDist = Math.hypot(mouseX - cx, mouseY - cy);
+            const dispOffset = (shearDist * 0.06 + pulseMagnitude * 35);
+            document.getElementById('disp-val').textContent = `Δλ = ${(12 + dispOffset * 0.4).toFixed(1)} nm`;
+
+            if (pulseMagnitude > 0.01) pulseMagnitude *= 0.95;
+
+            // Render R, G, B channels with additive compositing (screen / lighter)
+            ctx.globalCompositeOperation = 'screen';
+
+            const channels = [
+                { color: '#ff0044', dx: -dispOffset, dy: 0 },
+                { color: '#00ff88', dx: 0, dy: -dispOffset * 0.5 },
+                { color: '#0066ff', dx: dispOffset, dy: dispOffset * 0.5 }
+            ];
+
+            channels.forEach(ch => {
+                ctx.strokeStyle = ch.color;
+                ctx.lineWidth = 1.8;
+
+                for (let i = 0; i < RINGS; i++) {
+                    const r = 30 + i * 16;
+                    ctx.beginPath();
+
+                    for (let a = 0; a <= Math.PI * 2; a += 0.1) {
+                        let warp = 0;
+                        if (currentMode === 0) {
+                            warp = Math.sin(a * 6 + t * 3 + i * 0.2) * 12;
+                        } else if (currentMode === 1) {
+                            warp = Math.cos(a * 4 - t * 4 + (i / RINGS) * Math.PI) * 22;
+                        } else {
+                            warp = Math.sin(a * 10 + t * 2) * Math.cos(i * 0.5 - t) * 18;
+                        }
+
+                        const rad = r + warp;
+                        const x = cx + ch.dx + Math.cos(a) * rad;
+                        const y = cy + ch.dy + Math.sin(a) * rad;
+
+                        if (a === 0) ctx.moveTo(x, y);
+                        else ctx.lineTo(x, y);
+                    }
+                    ctx.closePath();
+                    ctx.stroke();
+                }
+            });
+
+            ctx.globalCompositeOperation = 'source-over';
+
+            requestAnimationFrame(render);
+        }
+
+        requestAnimationFrame(render);
+    </script>
+</body>
+</html>
