@@ -1,0 +1,497 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <title>SYNAPSE // Bio-Electric Neural Superstructure</title>
+    <style>
+        :root {
+            --glass-bg: rgba(6, 10, 24, 0.75);
+            --glass-border: rgba(0, 240, 255, 0.25);
+            --text-color: #d8ecff;
+            --accent: #00f0ff;
+            --action-potential: #ff0055;
+            --synaptic-glow: #7000ff;
+        }
+
+        * {
+            box-sizing: border-box;
+            margin: 0;
+            padding: 0;
+            user-select: none;
+            -webkit-user-select: none;
+        }
+
+        body, html {
+            width: 100%;
+            height: 100%;
+            overflow: hidden;
+            background-color: #020308;
+            font-family: 'Courier New', Courier, monospace;
+            touch-action: none;
+            cursor: crosshair;
+            color: var(--text-color);
+        }
+
+        canvas {
+            display: block;
+            width: 100%;
+            height: 100%;
+        }
+
+        #hud {
+            position: absolute;
+            top: 24px;
+            left: 24px;
+            color: var(--text-color);
+            pointer-events: none;
+            text-shadow: 0 0 8px rgba(0, 240, 255, 0.4);
+            font-size: 13px;
+            line-height: 1.6;
+            z-index: 10;
+        }
+
+        .hud-title {
+            font-size: 17px;
+            font-weight: bold;
+            letter-spacing: 2px;
+            color: #ffffff;
+            margin-bottom: 8px;
+            display: flex;
+            align-items: center;
+            gap: 8px;
+        }
+
+        .hud-badge {
+            font-size: 10px;
+            background: rgba(112, 0, 255, 0.2);
+            border: 1px solid var(--synaptic-glow);
+            color: #b862ff;
+            padding: 2px 6px;
+            border-radius: 4px;
+            letter-spacing: 1px;
+        }
+
+        .hud-stat {
+            display: flex;
+            gap: 8px;
+        }
+
+        .hud-label {
+            color: #587898;
+        }
+
+        .hud-val {
+            color: #ffffff;
+            font-weight: bold;
+        }
+
+        #dock {
+            position: absolute;
+            bottom: 28px;
+            left: 50%;
+            transform: translateX(-50%);
+            display: flex;
+            gap: 10px;
+            padding: 8px 18px;
+            background: var(--glass-bg);
+            border: 1px solid var(--glass-border);
+            border-radius: 100px;
+            backdrop-filter: blur(14px);
+            -webkit-backdrop-filter: blur(14px);
+            z-index: 20;
+            box-shadow: 0 8px 32px rgba(0, 0, 0, 0.8);
+        }
+
+        .btn {
+            background: transparent;
+            border: 1px solid transparent;
+            color: var(--text-color);
+            font-family: inherit;
+            font-size: 11px;
+            padding: 8px 15px;
+            border-radius: 50px;
+            cursor: pointer;
+            transition: all 0.25s ease;
+            text-transform: uppercase;
+            letter-spacing: 1px;
+            display: flex;
+            align-items: center;
+            gap: 6px;
+        }
+
+        .btn:hover {
+            border-color: var(--accent);
+            color: #fff;
+            text-shadow: 0 0 8px var(--accent);
+            box-shadow: 0 0 12px rgba(0, 240, 255, 0.25) inset;
+        }
+
+        .btn.active {
+            background: rgba(0, 240, 255, 0.15);
+            border-color: var(--accent);
+            color: var(--accent);
+            font-weight: bold;
+        }
+
+        #overlay {
+            position: absolute;
+            top: 0; left: 0; right: 0; bottom: 0;
+            background: radial-gradient(circle at center, rgba(3, 6, 16, 0.85) 0%, rgba(1, 2, 5, 0.98) 100%);
+            display: flex;
+            flex-direction: column;
+            justify-content: center;
+            align-items: center;
+            color: #fff;
+            z-index: 100;
+            cursor: pointer;
+            gap: 12px;
+            transition: opacity 0.4s ease;
+        }
+
+        #overlay.hidden {
+            opacity: 0;
+            pointer-events: none;
+        }
+
+        .glitch-title {
+            font-size: 20px;
+            letter-spacing: 5px;
+            font-weight: bold;
+            color: var(--accent);
+            text-shadow: 0 0 15px rgba(0, 240, 255, 0.6);
+        }
+
+        .glitch-sub {
+            font-size: 11px;
+            letter-spacing: 2px;
+            color: #587898;
+            text-transform: uppercase;
+        }
+    </style>
+</head>
+<body>
+
+    <div id="overlay">
+        <div class="glitch-title">SYNAPSE // NEURAL SUPERSTRUCTURE</div>
+        <div class="glitch-sub">Click anywhere to trigger synaptic bio-electric surge</div>
+    </div>
+
+    <canvas id="canvas"></canvas>
+
+    <div id="hud">
+        <div class="hud-title">
+            <span>SYNAPSE // CORTEX V3</span>
+            <span class="hud-badge">BIO-ELECTRIC MATRIX</span>
+        </div>
+        <div class="hud-stat"><span class="hud-label">COGNITIVE MODE:</span><span class="hud-val" id="mode-val">SYNCHRONOUS BURST</span></div>
+        <div class="hud-stat"><span class="hud-label">ACTIVE NEURONS:</span><span class="hud-val" id="neuron-count">96</span></div>
+        <div class="hud-stat"><span class="hud-label">SYNAPTIC PULSES:</span><span class="hud-val" id="pulse-count">0</span></div>
+        <div class="hud-stat"><span class="hud-label">MEMBRANE POTENTIAL:</span><span class="hud-val" id="voltage-val">-70.0 mV</span></div>
+    </div>
+
+    <div id="dock">
+        <button class="btn active" id="btn-m0" onclick="setMode(0)">● Burst Mode</button>
+        <button class="btn" id="btn-m1" onclick="setMode(1)">○ Synaptic Wave</button>
+        <button class="btn" id="btn-m2" onclick="setMode(2)">○ Hyper-Arousal</button>
+        <button class="btn" onclick="fireGlobalSurge()">Bio-Surge</button>
+        <button class="btn" id="btn-mute" onclick="toggleAudio()">Mute: OFF</button>
+    </div>
+
+    <script>
+        const canvas = document.getElementById('canvas');
+        const ctx = canvas.getContext('2d');
+        let width, height;
+
+        function resize() {
+            width = canvas.width = window.innerWidth;
+            height = canvas.height = window.innerHeight;
+        }
+        window.addEventListener('resize', resize);
+        resize();
+
+        // Procedural Audio Engine
+        let audioCtx = null;
+        let isMuted = false;
+        let masterGain = null;
+        let filter = null;
+
+        function initAudio() {
+            if (audioCtx) return;
+            try {
+                const AudioContext = window.AudioContext || window.webkitAudioContext;
+                audioCtx = new AudioContext();
+                masterGain = audioCtx.createGain();
+                masterGain.gain.setValueAtTime(0.18, audioCtx.currentTime);
+
+                filter = audioCtx.createBiquadFilter();
+                filter.type = 'lowpass';
+                filter.frequency.setValueAtTime(800, audioCtx.currentTime);
+                filter.Q.setValueAtTime(6, audioCtx.currentTime);
+
+                filter.connect(masterGain);
+                masterGain.connect(audioCtx.destination);
+            } catch(e) {}
+        }
+
+        function triggerSynapticChime(freq = 440, type = 'sine', dur = 0.3) {
+            if (!audioCtx || isMuted) return;
+            try {
+                const osc = audioCtx.createOscillator();
+                const g = audioCtx.createGain();
+                osc.type = type;
+                osc.frequency.setValueAtTime(freq, audioCtx.currentTime);
+                osc.frequency.exponentialRampToValueAtTime(freq * 0.4, audioCtx.currentTime + dur);
+                g.gain.setValueAtTime(0.08, audioCtx.currentTime);
+                g.gain.exponentialRampToValueAtTime(0.0001, audioCtx.currentTime + dur);
+                osc.connect(g);
+                g.connect(filter);
+                osc.start();
+                osc.stop(audioCtx.currentTime + dur);
+            } catch(e) {}
+        }
+
+        function toggleAudio() {
+            isMuted = !isMuted;
+            if (masterGain && audioCtx) {
+                masterGain.gain.setValueAtTime(isMuted ? 0 : 0.18, audioCtx.currentTime);
+            }
+            document.getElementById('btn-mute').textContent = isMuted ? 'Mute: ON' : 'Mute: OFF';
+        }
+
+        // 3D Neural Architecture
+        const NEURON_COUNT = 96;
+        const neurons = [];
+        let pulses = [];
+
+        class Neuron {
+            constructor(id) {
+                this.id = id;
+                const phi = Math.acos(-1 + (2 * id) / NEURON_COUNT);
+                const theta = Math.sqrt(NEURON_COUNT * Math.PI) * phi;
+                const radius = 260 + (Math.random() - 0.5) * 80;
+
+                this.x = radius * Math.cos(theta) * Math.sin(phi);
+                this.y = radius * Math.sin(theta) * Math.sin(phi);
+                this.z = radius * Math.cos(phi);
+
+                this.baseX = this.x;
+                this.baseY = this.y;
+                this.baseZ = this.z;
+
+                this.charge = 0;
+                this.refractory = 0;
+                this.synapses = [];
+                this.color = Math.random() < 0.25 ? '#ff0055' : (Math.random() < 0.5 ? '#00f0ff' : '#7000ff');
+            }
+
+            fire() {
+                if (this.refractory > 0) return;
+                this.charge = 1.0;
+                this.refractory = 0.4;
+                triggerSynapticChime(220 + (this.id % 12) * 55, 'triangle', 0.25);
+
+                this.synapses.forEach(targetId => {
+                    pulses.push({
+                        from: this,
+                        to: neurons[targetId],
+                        progress: 0,
+                        speed: 0.045 + Math.random() * 0.02,
+                        color: this.color
+                    });
+                });
+            }
+        }
+
+        for (let i = 0; i < NEURON_COUNT; i++) {
+            neurons.push(new Neuron(i));
+        }
+
+        // Connect nearest neighbors (Axons / Dendrites)
+        neurons.forEach(n => {
+            const dists = neurons
+                .filter(other => other.id !== n.id)
+                .map(other => {
+                    const dx = n.x - other.x, dy = n.y - other.y, dz = n.z - other.z;
+                    return { id: other.id, dist: Math.hypot(dx, dy, dz) };
+                })
+                .sort((a, b) => a.dist - b.dist);
+
+            const connections = Math.min(4, Math.floor(2 + Math.random() * 3));
+            for (let i = 0; i < connections; i++) {
+                n.synapses.push(dists[i].id);
+            }
+        });
+
+        let currentMode = 0;
+        const MODE_NAMES = ['SYNCHRONOUS BURST', 'SYNAPTIC WAVE PROPAGATION', 'HYPER-AROUSAL CASCADE'];
+
+        function setMode(m) {
+            currentMode = m;
+            document.querySelectorAll('#dock .btn').forEach((b, idx) => {
+                if (idx < 3) {
+                    b.classList.toggle('active', idx === m);
+                    b.textContent = (idx === m ? '● ' : '○ ') + ['Burst Mode', 'Synaptic Wave', 'Hyper-Arousal'][idx];
+                }
+            });
+            document.getElementById('mode-val').textContent = MODE_NAMES[m];
+        }
+
+        function fireGlobalSurge() {
+            initAudio();
+            for (let i = 0; i < 18; i++) {
+                const randNeuron = neurons[Math.floor(Math.random() * neurons.length)];
+                randNeuron.fire();
+            }
+            if (audioCtx) {
+                triggerSynapticChime(880, 'sine', 0.6);
+            }
+        }
+
+        // Interaction
+        let rotY = 0, rotX = 0, targetRotX = 0, targetRotY = 0;
+        let isPointerDown = false, lastX = 0, lastY = 0;
+
+        window.addEventListener('pointerdown', (e) => {
+            initAudio();
+            document.getElementById('overlay').classList.add('hidden');
+            isPointerDown = true;
+            lastX = e.clientX;
+            lastY = e.clientY;
+
+            // Trigger firing near click
+            const pick = neurons[Math.floor(Math.random() * neurons.length)];
+            pick.fire();
+        });
+
+        window.addEventListener('pointerup', () => { isPointerDown = false; });
+
+        window.addEventListener('pointermove', (e) => {
+            if (isPointerDown) {
+                const dx = e.clientX - lastX;
+                const dy = e.clientY - lastY;
+                targetRotY += dx * 0.006;
+                targetRotX += dy * 0.006;
+                lastX = e.clientX;
+                lastY = e.clientY;
+            }
+        });
+
+        // Main Animation
+        let lastTime = performance.now();
+
+        function render(now) {
+            const dt = (now - lastTime) / 1000;
+            lastTime = now;
+
+            rotY += (targetRotY - rotY) * 0.08 + 0.004;
+            rotX += (targetRotX - rotX) * 0.08;
+
+            // Mode automatic firing behaviors
+            if (currentMode === 0 && Math.random() < 0.04) {
+                neurons[Math.floor(Math.random() * neurons.length)].fire();
+            } else if (currentMode === 2 && Math.random() < 0.16) {
+                neurons[Math.floor(Math.random() * neurons.length)].fire();
+            }
+
+            // Canvas clear with deep fade
+            ctx.fillStyle = 'rgba(2, 3, 8, 0.3)';
+            ctx.fillRect(0, 0, width, height);
+
+            const cx = width / 2;
+            const cy = height / 2;
+            const fov = 450;
+
+            const cosY = Math.cos(rotY), sinY = Math.sin(rotY);
+            const cosX = Math.cos(rotX), sinX = Math.sin(rotX);
+
+            // Project 3D nodes
+            neurons.forEach(n => {
+                if (n.refractory > 0) n.refractory -= dt;
+                if (n.charge > 0) n.charge = Math.max(0, n.charge - dt * 2.2);
+
+                // Rotation Y
+                const x1 = n.x * cosY - n.z * sinY;
+                const z1 = n.x * sinY + n.z * cosY;
+
+                // Rotation X
+                const y2 = n.y * cosX - z1 * sinX;
+                const z2 = n.y * sinX + z1 * cosX;
+
+                const scale = fov / (fov + z2 + 400);
+                n.projX = cx + x1 * scale;
+                n.projY = cy + y2 * scale;
+                n.projScale = scale;
+                n.projZ = z2;
+            });
+
+            // Draw Synaptic Axons (Dormant Connections)
+            ctx.lineWidth = 0.8;
+            neurons.forEach(n => {
+                n.synapses.forEach(targetId => {
+                    const target = neurons[targetId];
+                    if (n.id < target.id) { // Draw once
+                        ctx.beginPath();
+                        ctx.moveTo(n.projX, n.projY);
+                        ctx.lineTo(target.projX, target.projY);
+                        ctx.strokeStyle = `rgba(30, 60, 110, ${0.15 * Math.min(n.projScale, target.projScale)})`;
+                        ctx.stroke();
+                    }
+                });
+            });
+
+            // Update & Render Action Potential Pulses
+            for (let i = pulses.length - 1; i >= 0; i--) {
+                const p = pulses[i];
+                p.progress += p.speed;
+
+                if (p.progress >= 1.0) {
+                    p.to.fire(); // Propagate!
+                    pulses.splice(i, 1);
+                    continue;
+                }
+
+                const px = p.from.projX + (p.to.projX - p.from.projX) * p.progress;
+                const py = p.from.projY + (p.to.projY - p.from.projY) * p.progress;
+
+                ctx.beginPath();
+                ctx.arc(px, py, 2.5 * p.from.projScale, 0, Math.PI * 2);
+                ctx.fillStyle = p.color;
+                ctx.shadowColor = p.color;
+                ctx.shadowBlur = 10;
+                ctx.fill();
+                ctx.shadowBlur = 0;
+            }
+
+            // Draw Neuron Cell Bodies (Somas)
+            neurons.forEach(n => {
+                const r = Math.max(2, (4 + n.charge * 6) * n.projScale);
+                ctx.beginPath();
+                ctx.arc(n.projX, n.projY, r, 0, Math.PI * 2);
+
+                if (n.charge > 0.05) {
+                    ctx.fillStyle = '#ffffff';
+                    ctx.shadowColor = n.color;
+                    ctx.shadowBlur = 20 * n.charge;
+                    ctx.fill();
+                    ctx.shadowBlur = 0;
+                } else {
+                    ctx.fillStyle = n.color;
+                    ctx.globalAlpha = Math.min(1.0, 0.4 + n.projScale * 0.6);
+                    ctx.fill();
+                    ctx.globalAlpha = 1.0;
+                }
+            });
+
+            // Telemetry updates
+            document.getElementById('pulse-count').textContent = pulses.length;
+            const avgCharge = neurons.reduce((acc, cur) => acc + cur.charge, 0) / NEURON_COUNT;
+            const voltage = (-70 + avgCharge * 100).toFixed(1);
+            document.getElementById('voltage-val').textContent = `${voltage} mV`;
+
+            requestAnimationFrame(render);
+        }
+        requestAnimationFrame(render);
+    </script>
+</body>
+</html>
