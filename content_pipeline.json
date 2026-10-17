@@ -30,7 +30,8 @@
     "description": "N-body gravitational simulation with planetary orbits, Lagrange points, slingshot maneuvers, and procedural space ambient synthesis.",
     "client": "Production Engine",
     "scheduledDate": "2026-10-15",
-    "published": false
+    "published": true,
+    "publishedAt": "2026-10-17T12:20:41.739Z"
   },
   {
     "id": "future-04",

@@ -1,5 +1,14 @@
 [
   {
+    "title": "COSMOS // Orbital Mechanics Lab",
+    "client": "Production Engine",
+    "category": "Gravitational N-Body Simulation",
+    "assetUrl": "./cosmos-orbital.html",
+    "type": "interactive",
+    "description": "N-body gravitational simulation with planetary orbits, Lagrange points, slingshot maneuvers, and procedural space ambient synthesis.",
+    "isNew": true
+  },
+  {
     "title": "FLUX // Electromagnetic Wave Engine",
     "client": "Production Engine",
     "category": "Wave Physics Simulation",
