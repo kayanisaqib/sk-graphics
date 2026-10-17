@@ -1,0 +1,357 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <title>KALEIDO // Hyper-Dimensional Symmetry Matrix</title>
+    <style>
+        :root {
+            --glass-bg: rgba(14, 10, 26, 0.75);
+            --glass-border: rgba(255, 0, 180, 0.25);
+            --text-color: #fce4ff;
+            --accent: #ff00b4;
+            --cyan: #00f0ff;
+            --gold: #ffbe00;
+        }
+
+        * {
+            box-sizing: border-box;
+            margin: 0;
+            padding: 0;
+            user-select: none;
+            -webkit-user-select: none;
+        }
+
+        body, html {
+            width: 100%;
+            height: 100%;
+            overflow: hidden;
+            background: #020106;
+            font-family: 'Courier New', Courier, monospace;
+            touch-action: none;
+            cursor: crosshair;
+            color: var(--text-color);
+        }
+
+        canvas {
+            display: block;
+            width: 100%;
+            height: 100%;
+        }
+
+        #hud {
+            position: absolute;
+            top: 24px;
+            left: 24px;
+            color: var(--text-color);
+            pointer-events: none;
+            text-shadow: 0 0 8px rgba(255, 0, 180, 0.4);
+            font-size: 13px;
+            line-height: 1.6;
+            z-index: 10;
+        }
+
+        .hud-title {
+            font-size: 17px;
+            font-weight: bold;
+            letter-spacing: 2px;
+            color: #ffffff;
+            margin-bottom: 8px;
+            display: flex;
+            align-items: center;
+            gap: 8px;
+        }
+
+        .hud-badge {
+            font-size: 10px;
+            background: rgba(255, 0, 180, 0.2);
+            border: 1px solid var(--accent);
+            color: #ff5cd2;
+            padding: 2px 6px;
+            border-radius: 4px;
+            letter-spacing: 1px;
+        }
+
+        .hud-stat {
+            display: flex;
+            gap: 8px;
+        }
+
+        .hud-label {
+            color: #92589e;
+        }
+
+        .hud-val {
+            color: #ffffff;
+            font-weight: bold;
+        }
+
+        #dock {
+            position: absolute;
+            bottom: 28px;
+            left: 50%;
+            transform: translateX(-50%);
+            display: flex;
+            gap: 10px;
+            padding: 8px 18px;
+            background: var(--glass-bg);
+            border: 1px solid var(--glass-border);
+            border-radius: 100px;
+            backdrop-filter: blur(14px);
+            -webkit-backdrop-filter: blur(14px);
+            z-index: 20;
+            box-shadow: 0 8px 32px rgba(0, 0, 0, 0.8);
+        }
+
+        .btn {
+            background: transparent;
+            border: 1px solid transparent;
+            color: var(--text-color);
+            font-family: inherit;
+            font-size: 11px;
+            padding: 8px 15px;
+            border-radius: 50px;
+            cursor: pointer;
+            transition: all 0.25s ease;
+            text-transform: uppercase;
+            letter-spacing: 1px;
+            display: flex;
+            align-items: center;
+            gap: 6px;
+        }
+
+        .btn:hover {
+            border-color: var(--accent);
+            color: #fff;
+            text-shadow: 0 0 8px var(--accent);
+            box-shadow: 0 0 12px rgba(255, 0, 180, 0.25) inset;
+        }
+
+        .btn.active {
+            background: rgba(255, 0, 180, 0.15);
+            border-color: var(--accent);
+            color: var(--accent);
+            font-weight: bold;
+        }
+
+        #overlay {
+            position: absolute;
+            top: 0; left: 0; right: 0; bottom: 0;
+            background: radial-gradient(circle at center, rgba(6, 2, 14, 0.85) 0%, rgba(1, 0, 4, 0.98) 100%);
+            display: flex;
+            flex-direction: column;
+            justify-content: center;
+            align-items: center;
+            color: #fff;
+            z-index: 100;
+            cursor: pointer;
+            gap: 12px;
+            transition: opacity 0.4s ease;
+        }
+
+        #overlay.hidden {
+            opacity: 0;
+            pointer-events: none;
+        }
+    </style>
+</head>
+<body>
+
+    <div id="overlay">
+        <div style="font-size: 20px; letter-spacing: 5px; font-weight: bold; color: var(--accent); text-shadow: 0 0 15px rgba(255, 0, 180, 0.6);">KALEIDO // HYPER-DIMENSIONAL SYMMETRY</div>
+        <div style="font-size: 11px; letter-spacing: 2px; color: #92589e; text-transform: uppercase;">Click anywhere to awaken prismatic crystallographic harmonic audio</div>
+    </div>
+
+    <canvas id="canvas"></canvas>
+
+    <div id="hud">
+        <div class="hud-title">
+            <span>KALEIDO // SYMMETRY LAB</span>
+            <span class="hud-badge">POLYTOPE MATRIX</span>
+        </div>
+        <div class="hud-stat"><span class="hud-label">SYMMETRY ORDER:</span><span class="hud-val" id="fold-val">12-FOLD DIHEDRAL (D12)</span></div>
+        <div class="hud-stat"><span class="hud-label">COLOR PALETTE:</span><span class="hud-val" id="pal-val">NEO-CYBER OPTIC</span></div>
+        <div class="hud-stat"><span class="hud-label">POLYTOPE DENSITY:</span><span class="hud-val">84 OSCILLATING LOCI</span></div>
+        <div class="hud-stat"><span class="hud-label">INTERACTION:</span><span class="hud-val">CURSOR DISPLACEMENT</span></div>
+    </div>
+
+    <div id="dock">
+        <button class="btn active" id="btn-m0" onclick="setFolds(12)">● 12-Fold</button>
+        <button class="btn" id="btn-m1" onclick="setFolds(8)">○ 8-Fold</button>
+        <button class="btn" id="btn-m2" onclick="setFolds(16)">○ 16-Fold</button>
+        <button class="btn" onclick="scrambleHarmonics()">Prism Shift</button>
+        <button class="btn" id="btn-mute" onclick="toggleAudio()">Mute: OFF</button>
+    </div>
+
+    <script>
+        const canvas = document.getElementById('canvas');
+        const ctx = canvas.getContext('2d');
+        let width, height;
+
+        function resize() {
+            width = canvas.width = window.innerWidth;
+            height = canvas.height = window.innerHeight;
+        }
+        window.addEventListener('resize', resize);
+        resize();
+
+        // Procedural Web Audio API Crystal Harp Engine
+        let audioCtx = null;
+        let isMuted = false;
+        let masterGain = null;
+
+        function initAudio() {
+            if (audioCtx) return;
+            try {
+                audioCtx = new (window.AudioContext || window.webkitAudioContext)();
+                masterGain = audioCtx.createGain();
+                masterGain.gain.setValueAtTime(0.18, audioCtx.currentTime);
+                masterGain.connect(audioCtx.destination);
+            } catch(e) {}
+        }
+
+        const CHORD_FREQS = [261.63, 293.66, 329.63, 392.00, 440.00, 523.25, 659.25, 783.99];
+
+        function playCrystalChime(freq, dur = 0.6) {
+            if (!audioCtx || isMuted) return;
+            try {
+                const osc = audioCtx.createOscillator();
+                const g = audioCtx.createGain();
+                osc.type = 'sine';
+                osc.frequency.setValueAtTime(freq, audioCtx.currentTime);
+                g.gain.setValueAtTime(0.06, audioCtx.currentTime);
+                g.gain.exponentialRampToValueAtTime(0.0001, audioCtx.currentTime + dur);
+                osc.connect(g);
+                g.connect(masterGain);
+                osc.start();
+                osc.stop(audioCtx.currentTime + dur);
+            } catch(e) {}
+        }
+
+        function toggleAudio() {
+            isMuted = !isMuted;
+            if (masterGain && audioCtx) {
+                masterGain.gain.setValueAtTime(isMuted ? 0 : 0.18, audioCtx.currentTime);
+            }
+            document.getElementById('btn-mute').textContent = isMuted ? 'Mute: ON' : 'Mute: OFF';
+        }
+
+        let numFolds = 12;
+
+        function setFolds(folds) {
+            numFolds = folds;
+            document.querySelectorAll('#dock .btn').forEach((b, idx) => {
+                if (idx < 3) {
+                    const match = [12, 8, 16][idx] === folds;
+                    b.classList.toggle('active', match);
+                    b.textContent = (match ? '● ' : '○ ') + [12, 8, 16][idx] + '-Fold';
+                }
+            });
+            document.getElementById('fold-val').textContent = `${folds}-FOLD DIHEDRAL (D${folds})`;
+            playCrystalChime(523.25, 0.8);
+        }
+
+        function scrambleHarmonics() {
+            points.forEach(p => {
+                p.freq = 0.5 + Math.random() * 2.5;
+                p.phase = Math.random() * Math.PI * 2;
+            });
+            playCrystalChime(783.99, 1.0);
+        }
+
+        // Generating Dynamic Generative Points
+        const points = [];
+        for (let i = 0; i < 48; i++) {
+            points.push({
+                radius: 40 + i * 8,
+                speed: (i % 2 === 0 ? 1 : -1) * (0.001 + (i / 48) * 0.003),
+                freq: 1 + (i % 5) * 0.5,
+                phase: (i * Math.PI) / 12,
+                color: i % 3 === 0 ? '#ff00b4' : (i % 3 === 1 ? '#00f0ff' : '#ffbe00')
+            });
+        }
+
+        let mouseX = width / 2;
+        let mouseY = height / 2;
+
+        window.addEventListener('pointerdown', (e) => {
+            initAudio();
+            document.getElementById('overlay').classList.add('hidden');
+            mouseX = e.clientX;
+            mouseY = e.clientY;
+            playCrystalChime(CHORD_FREQS[Math.floor(Math.random() * CHORD_FREQS.length)], 0.5);
+        });
+
+        window.addEventListener('pointermove', (e) => {
+            mouseX = e.clientX;
+            mouseY = e.clientY;
+        });
+
+        // Animation Loop
+        function render(now) {
+            const t = now * 0.001;
+
+            ctx.fillStyle = 'rgba(2, 1, 6, 0.22)';
+            ctx.fillRect(0, 0, width, height);
+
+            const cx = width / 2;
+            const cy = height / 2;
+            const sliceAngle = (Math.PI * 2) / numFolds;
+
+            // Interactive mouse warp
+            const warpX = (mouseX - cx) * 0.2;
+            const warpY = (mouseY - cy) * 0.2;
+
+            for (let f = 0; f < numFolds; f++) {
+                ctx.save();
+                ctx.translate(cx, cy);
+                ctx.rotate(f * sliceAngle);
+                if (f % 2 === 1) {
+                    ctx.scale(1, -1);
+                }
+
+                // Draw Intricate Generative Ribbons
+                ctx.lineWidth = 1.4;
+                for (let i = 0; i < points.length; i += 2) {
+                    const p1 = points[i];
+                    const p2 = points[i + 1] || points[0];
+
+                    const r1 = p1.radius + Math.sin(t * p1.freq + p1.phase) * 35;
+                    const theta1 = t * p1.speed * 20 + p1.phase;
+                    const x1 = Math.cos(theta1) * r1 + warpX * 0.15;
+                    const y1 = Math.sin(theta1) * r1 + warpY * 0.15;
+
+                    const r2 = p2.radius + Math.cos(t * p2.freq + p2.phase) * 35;
+                    const theta2 = t * p2.speed * 20 + p2.phase;
+                    const x2 = Math.cos(theta2) * r2;
+                    const y2 = Math.sin(theta2) * r2;
+
+                    ctx.beginPath();
+                    ctx.moveTo(x1, y1);
+                    ctx.bezierCurveTo(x1 * 0.5, y2, x2 * 0.5, y1, x2, y2);
+                    ctx.strokeStyle = p1.color;
+                    ctx.globalAlpha = 0.45;
+                    ctx.stroke();
+
+                    // Node Glint
+                    if (i % 6 === 0) {
+                        ctx.beginPath();
+                        ctx.arc(x1, y1, 2, 0, Math.PI * 2);
+                        ctx.fillStyle = '#ffffff';
+                        ctx.shadowColor = p1.color;
+                        ctx.shadowBlur = 8;
+                        ctx.fill();
+                        ctx.shadowBlur = 0;
+                    }
+                }
+
+                ctx.restore();
+            }
+
+            requestAnimationFrame(render);
+        }
+
+        requestAnimationFrame(render);
+    </script>
+</body>
+</html>
