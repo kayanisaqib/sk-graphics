@@ -8,8 +8,7 @@
     "description": "Interactive double-helix DNA strand visualization with real-time base pair matching, rotational dynamics, and molecular audio synthesis.",
     "client": "Production Engine",
     "scheduledDate": "2026-10-08",
-    "published": true,
-    "publishedAt": "2026-10-10T14:38:41.408Z"
+    "published": true
   },
   {
     "id": "future-02",
@@ -20,8 +19,7 @@
     "description": "Real-time electromagnetic wave propagation simulator with interference patterns, standing waves, and Doppler shift visualization.",
     "client": "Production Engine",
     "scheduledDate": "2026-10-11",
-    "published": true,
-    "publishedAt": "2026-10-14T13:58:09.267Z"
+    "published": true
   },
   {
     "id": "future-03",
@@ -54,6 +52,50 @@
     "description": "Quantum wavefunction visualizer showing probability densities, superposition states, tunnel effect, and double-slit diffraction patterns.",
     "client": "Production Engine",
     "scheduledDate": "2026-10-22",
+    "published": false
+  },
+  {
+    "id": "future-06",
+    "title": "SYNAPSE // Bio-Electric Neural Superstructure",
+    "category": "Neural Connectome Simulation",
+    "assetUrl": "./synapse-neural.html",
+    "type": "interactive",
+    "description": "Mind-blowing 3D interactive human connectome matrix featuring 96 interconnected neural somas, propagating action potentials, dendritic branch pulses, and procedural neuro-chime sound synthesis.",
+    "client": "Production Engine",
+    "scheduledDate": "2026-10-25",
+    "published": false
+  },
+  {
+    "id": "future-07",
+    "title": "KALEIDO // Hyper-Dimensional Symmetry Matrix",
+    "category": "Crystallographic Geometry",
+    "assetUrl": "./kaleido-matrix.html",
+    "type": "interactive",
+    "description": "Mesmerizing multi-fold dihedral symmetry engine featuring 16-fold polytope reflection lattices, real-time mouse field deformation, and crystal harp acoustic resonance.",
+    "client": "Production Engine",
+    "scheduledDate": "2026-10-29",
+    "published": false
+  },
+  {
+    "id": "future-08",
+    "title": "GRAVITON // General Relativistic Geodesic Core",
+    "category": "Astrophysical Kerr Lensing",
+    "assetUrl": "./graviton-core.html",
+    "type": "interactive",
+    "description": "Stunning relativistic Kerr black hole simulator modeling 1600-particle Keplerian accretion disks, Einstein photon spheres, relativistic Doppler beaming, and interactive relativistic jet emissions.",
+    "client": "Production Engine",
+    "scheduledDate": "2026-11-01",
+    "published": false
+  },
+  {
+    "id": "future-09",
+    "title": "CHROMA // Superluminal Spectral Dispersion Engine",
+    "category": "Optical Wavefront Dispersion",
+    "assetUrl": "./chroma-spectral.html",
+    "type": "interactive",
+    "description": "Breathtaking optical polarization and RGB chromatic shear lattice calculating wave caustics, radial frequency splitting, and tri-harmonic chords.",
+    "client": "Production Engine",
+    "scheduledDate": "2026-11-05",
     "published": false
   }
 ]
