@@ -42,7 +42,8 @@
     "description": "Cellular automata playground with Conway's Game of Life, Wireworld, and Langton's Ant. Emergent complexity from simple rules.",
     "client": "Production Engine",
     "scheduledDate": "2026-10-18",
-    "published": false
+    "published": true,
+    "publishedAt": "2026-10-21T14:03:57.127Z"
   },
   {
     "id": "future-05",

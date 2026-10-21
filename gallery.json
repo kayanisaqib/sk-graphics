@@ -1,5 +1,14 @@
 [
   {
+    "title": "ENTROPY // Cellular Automata Matrix",
+    "client": "Production Engine",
+    "category": "Emergent Complexity Engine",
+    "assetUrl": "./entropy-automata.html",
+    "type": "interactive",
+    "description": "Cellular automata playground with Conway's Game of Life, Wireworld, and Langton's Ant. Emergent complexity from simple rules.",
+    "isNew": true
+  },
+  {
     "title": "COSMOS // Orbital Mechanics Lab",
     "client": "Production Engine",
     "category": "Gravitational N-Body Simulation",
