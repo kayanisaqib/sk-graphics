@@ -54,7 +54,8 @@
     "description": "Quantum wavefunction visualizer showing probability densities, superposition states, tunnel effect, and double-slit diffraction patterns.",
     "client": "Production Engine",
     "scheduledDate": "2026-10-22",
-    "published": false
+    "published": true,
+    "publishedAt": "2026-10-24T12:53:11.513Z"
   },
   {
     "id": "future-06",

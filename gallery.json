@@ -1,5 +1,14 @@
 [
   {
+    "title": "QUANTUM // Superposition Visualizer",
+    "client": "Production Engine",
+    "category": "Quantum Mechanics Simulation",
+    "assetUrl": "./quantum-superposition.html",
+    "type": "interactive",
+    "description": "Quantum wavefunction visualizer showing probability densities, superposition states, tunnel effect, and double-slit diffraction patterns.",
+    "isNew": true
+  },
+  {
     "title": "ENTROPY // Cellular Automata Matrix",
     "client": "Production Engine",
     "category": "Emergent Complexity Engine",
