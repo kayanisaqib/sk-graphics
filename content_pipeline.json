@@ -66,7 +66,8 @@
     "description": "Mind-blowing 3D interactive human connectome matrix featuring 96 interconnected neural somas, propagating action potentials, dendritic branch pulses, and procedural neuro-chime sound synthesis.",
     "client": "Production Engine",
     "scheduledDate": "2026-10-25",
-    "published": false
+    "published": true,
+    "publishedAt": "2026-10-28T15:22:34.783Z"
   },
   {
     "id": "future-07",

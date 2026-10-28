@@ -1,5 +1,14 @@
 [
   {
+    "title": "SYNAPSE // Bio-Electric Neural Superstructure",
+    "client": "Production Engine",
+    "category": "Neural Connectome Simulation",
+    "assetUrl": "./synapse-neural.html",
+    "type": "interactive",
+    "description": "Mind-blowing 3D interactive human connectome matrix featuring 96 interconnected neural somas, propagating action potentials, dendritic branch pulses, and procedural neuro-chime sound synthesis.",
+    "isNew": true
+  },
+  {
     "title": "QUANTUM // Superposition Visualizer",
     "client": "Production Engine",
     "category": "Quantum Mechanics Simulation",
