@@ -1,5 +1,14 @@
 [
   {
+    "title": "KALEIDO // Hyper-Dimensional Symmetry Matrix",
+    "client": "Production Engine",
+    "category": "Crystallographic Geometry",
+    "assetUrl": "./kaleido-matrix.html",
+    "type": "interactive",
+    "description": "Mesmerizing multi-fold dihedral symmetry engine featuring 16-fold polytope reflection lattices, real-time mouse field deformation, and crystal harp acoustic resonance.",
+    "isNew": true
+  },
+  {
     "title": "SYNAPSE // Bio-Electric Neural Superstructure",
     "client": "Production Engine",
     "category": "Neural Connectome Simulation",

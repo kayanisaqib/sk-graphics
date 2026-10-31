@@ -78,7 +78,8 @@
     "description": "Mesmerizing multi-fold dihedral symmetry engine featuring 16-fold polytope reflection lattices, real-time mouse field deformation, and crystal harp acoustic resonance.",
     "client": "Production Engine",
     "scheduledDate": "2026-10-29",
-    "published": false
+    "published": true,
+    "publishedAt": "2026-10-31T14:41:25.247Z"
   },
   {
     "id": "future-08",
